@@ -259,11 +259,34 @@ body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f
     <input type="text" id="login-name" placeholder="이름 (예: 홍길동)" maxlength="10" />
     <select id="login-dept">
       <option value="">부서 선택</option>
-      <option>기획조정실</option>
-      <option>경영지원처</option>
-      <option>생활체육처</option>
-      <option>개발사업처</option>
-      <option>교통레저처</option>
+      <optgroup label="기획조정실">
+        <option>전략기획팀</option>
+        <option>홍보전산팀</option>
+        <option>법무감사팀</option>
+      </optgroup>
+      <optgroup label="경영사업본부 · 경영지원처">
+        <option>경영지원팀</option>
+        <option>인사노무팀</option>
+        <option>재무회계팀</option>
+      </optgroup>
+      <optgroup label="경영사업본부 · 생활체육처">
+        <option>국민체육센터팀</option>
+        <option>부곡스포츠센터팀</option>
+        <option>백운스포츠센터팀</option>
+        <option>포일스포츠센터팀</option>
+        <option>재난안전팀</option>
+      </optgroup>
+      <optgroup label="개발사업본부 · 개발사업처">
+        <option>개발사업팀</option>
+        <option>신규사업팀</option>
+      </optgroup>
+      <optgroup label="개발사업본부 · 교통레저처">
+        <option>교통시설팀</option>
+        <option>왕송호수레저팀</option>
+        <option>바라산휴양림팀</option>
+        <option>개발지원팀</option>
+        <option>교통약자이동팀</option>
+      </optgroup>
     </select>
     <button class="login-btn" onclick="doLogin()">접속하기</button>
     <div class="login-err" id="login-err"></div>
@@ -414,6 +437,7 @@ async function startApp() {
   setInterval(updateLastSeen, 30000);
   setInterval(loadUsers, 15000);
   setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
+  setInterval(loadRooms, 5000);
 }
 
 async function updateLastSeen() {
@@ -496,7 +520,11 @@ function filterRooms() { renderRooms(rooms); }
 // ── 채팅방 열기 ──
 async function openRoom(roomId) {
   currentRoom = rooms.find(r=>r.id===roomId);
-  if (!currentRoom) return;
+  if (!currentRoom) {
+    await loadRooms();
+    currentRoom = rooms.find(r=>r.id===roomId);
+    if (!currentRoom) return;
+  }
   document.querySelectorAll('.room-item').forEach(el => el.classList.remove('active'));
   document.getElementById('empty-chat').style.display = 'none';
   const cm = document.getElementById('chat-main');
@@ -593,12 +621,18 @@ function subscribeRealtime() {
     ws.send(JSON.stringify({ topic: 'realtime:public:messages', event: 'phx_join', payload: {}, ref: '1' }));
   };
   ws.onmessage = (e) => {
-    const data = JSON.parse(e.data);
-    if (data.event === 'INSERT' && data.payload?.record) {
-      const msg = data.payload.record;
-      if (currentRoom && msg.room_id === currentRoom.id) loadMessages();
-      loadRooms();
-    }
+    try {
+      const data = JSON.parse(e.data);
+      if (data.event === 'INSERT' && data.payload?.record) {
+        const msg = data.payload.record;
+        if (msg.content !== undefined) {
+          if (currentRoom && msg.room_id === currentRoom.id) loadMessages();
+          loadRooms();
+        } else {
+          loadRooms();
+        }
+      }
+    } catch(err) {}
   };
   ws.onclose = () => { setTimeout(subscribeRealtime, 3000); };
 }
@@ -666,7 +700,13 @@ async function startDirectChat(otherId, otherName) {
     await api('room_members', 'POST', { room_id: r.id, user_id: ME.id });
     await api('room_members', 'POST', { room_id: r.id, user_id: otherId });
     await loadRooms();
-    await openRoom(r.id);
+    const newRoom = rooms.find(x=>x.id===r.id);
+    if (newRoom) {
+      await openRoom(r.id);
+    } else {
+      currentRoom = { id: r.id, type: 'direct', displayName: otherName||'', otherIds: [otherId] };
+      await openRoom(r.id);
+    }
   } catch(e) {
     alert('채팅 시작 오류: ' + e.message);
     console.error(e);
