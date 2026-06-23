@@ -417,6 +417,7 @@ function doLogout() {
   if (realtimeSub) realtimeSub.close();
   [window._t1, window._t2, window._t3, window._t4].forEach(t => clearInterval(t));
   currentRoom = null; rooms = []; allUsers = [];
+  lastSeenMsgIds = {}; unreadCounts = {}; roomsInitialized = false;
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
   loadDepartments();
@@ -473,10 +474,12 @@ function renderOnlineList() {
 
 // ── 채팅방 목록 ──
 let lastSeenMsgIds = {};
+let roomsInitialized = false;  // 첫 로드 완료 여부
+
 async function loadRooms() {
   if (!ME || !ME.id) return;
   const members = await api('room_members?user_id=eq.' + ME.id + '&select=room_id');
-  if (!members.length) { renderRooms([]); return; }
+  if (!members.length) { renderRooms([]); roomsInitialized = true; return; }
   const ids = members.map(m => m.room_id);
   const roomData = await api('rooms?id=in.(' + ids.join(',') + ')&select=*&order=created_at.desc');
   const lastMsgs = await Promise.all(roomData.map(r =>
@@ -491,27 +494,33 @@ async function loadRooms() {
       displayName = other ? other.name : '알 수 없음';
     }
     const lastMsg = lastMsgs[i][0] || null;
-    // 새 메시지 감지 → unread 증가
-    if (lastMsg && lastMsg.user_id !== ME.id) {
-      const prevId = lastSeenMsgIds[r.id];
-      if (prevId === undefined) {
-        lastSeenMsgIds[r.id] = lastMsg.id;
-      } else if (prevId !== lastMsg.id) {
-        const isCurrentRoom = currentRoom && currentRoom.id === r.id;
-        if (!isCurrentRoom) {
-          unreadCounts[r.id] = (unreadCounts[r.id] || 0) + 1;
-          updateTitleBadge();
-          playBeep();
-          const sender = allUsers.find(u => u.id === lastMsg.user_id);
-          showBrowserNotif(sender ? sender.name : '누군가', lastMsg.content, r.id);
+
+    if (!roomsInitialized) {
+      // 첫 로드: 현재 마지막 메시지 ID만 기억 (알림 없음)
+      if (lastMsg) lastSeenMsgIds[r.id] = lastMsg.id;
+    } else {
+      // 이후 폴링: 새 메시지 감지
+      if (lastMsg && lastMsg.user_id !== ME.id) {
+        const prevId = lastSeenMsgIds[r.id];
+        if (prevId !== undefined && prevId !== lastMsg.id) {
+          const isCurrentRoom = currentRoom && currentRoom.id === r.id;
+          if (!isCurrentRoom) {
+            unreadCounts[r.id] = (unreadCounts[r.id] || 0) + 1;
+            updateTitleBadge();
+            playBeep();
+            const sender = allUsers.find(u => u.id === lastMsg.user_id);
+            showBrowserNotif(sender ? sender.name : '누군가', lastMsg.content, r.id);
+          }
         }
+        if (lastMsg) lastSeenMsgIds[r.id] = lastMsg.id;
+      } else if (lastMsg) {
         lastSeenMsgIds[r.id] = lastMsg.id;
       }
-    } else if (lastMsg) {
-      lastSeenMsgIds[r.id] = lastMsg.id;
     }
     return { ...r, displayName, lastMsg, otherIds };
   }));
+
+  if (!roomsInitialized) roomsInitialized = true;
   renderRooms(rooms);
 }
 
