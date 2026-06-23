@@ -460,16 +460,21 @@ document.addEventListener('keydown', () => lastActivity = Date.now());
 async function updateLastSeen() {
   if (!ME) return;
   const idleSec = (Date.now() - lastActivity) / 1000;
-  // 5분 이상 미활동이면 away로 자동 전환 (수동 설정 없을 때만)
-  let autoStatus = idleSec > 300 ? 'away' : 'online';
-  if (ME.status && !['online','away','offline'].includes(ME.status)) {
-    autoStatus = ME.status; // 수동 설정 유지
+
+  // 수동 설정 상태 (busy, chat, dnd) 는 건드리지 않음
+  const isManual = ME.status && ['busy','chat','dnd'].includes(ME.status);
+  let newStatus = ME.status || 'online';
+
+  if (!isManual) {
+    // 자동 상태만 업데이트
+    newStatus = idleSec > 300 ? 'away' : 'online';
+    ME.status = newStatus;
   }
+
   await api('users?id=eq.' + ME.id, 'PATCH', {
     last_seen: new Date().toISOString(),
-    status: autoStatus
+    status: newStatus
   });
-  ME.status = autoStatus;
   updateMyStatusDisplay();
 }
 
@@ -1013,11 +1018,11 @@ function getAutoStatus(lastSeen) {
 }
 
 function getEffectiveStatus(user) {
-  // 수동 설정이 있으면 우선, 없으면 last_seen 기반 자동
-  if (user.status && !['online','away','offline'].includes(user.status)) {
-    return user.status; // busy, chat, dnd
-  }
-  return getAutoStatus(user.last_seen);
+  // 오프라인 판단은 last_seen 기준 (접속 끊기면 DB status 못 바꾸니까)
+  const diff = (Date.now() - new Date(user.last_seen).getTime()) / 1000;
+  if (diff > 90) return 'offline';  // 1분30초 이상 → 오프라인
+  // 그 외는 DB status 값 그대로
+  return user.status || 'online';
 }
 
 function getStatusInfo(statusValue) {
