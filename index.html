@@ -290,6 +290,7 @@ body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f
     <div class="room-list" id="room-list"></div>
     <div class="online-list" id="online-list" style="display:none;"></div>
     <button class="new-chat-btn" onclick="openNewChat()">+ 새 채팅 / 단체방</button>
+    <button class="new-chat-btn" onclick="testNotif()" style="margin-top:4px;background:rgba(255,200,0,0.15);border-color:rgba(255,200,0,0.3);font-size:11px;">🧪 알림 테스트</button>
   </div>
 
   <div class="chat-area" id="chat-area">
@@ -970,6 +971,54 @@ async function autoDeleteOldMessages() {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     await api('messages?created_at=lt.' + cutoff, 'DELETE');
   } catch(e) { console.error('자동삭제 오류:', e); }
+}
+
+// ── 알림 테스트 ──
+async function testNotif() {
+  const lines = [];
+  lines.push('=== 알림 진단 ===');
+  lines.push('notifEnabled: ' + notifEnabled);
+  lines.push('Notification.permission: ' + Notification.permission);
+  lines.push('roomsInitialized: ' + roomsInitialized);
+  lines.push('unreadCounts: ' + JSON.stringify(unreadCounts));
+  lines.push('lastSeenMsgIds 개수: ' + Object.keys(lastSeenMsgIds).length);
+  lines.push('rooms 개수: ' + rooms.length);
+
+  // 뱃지 강제 테스트
+  if (rooms.length > 0) {
+    const testRoomId = rooms[0].id;
+    unreadCounts[testRoomId] = 99;
+    updateTitleBadge();
+    renderRooms(rooms);
+    lines.push('✅ 뱃지 강제 표시 시도 (채팅방 목록 확인)');
+    setTimeout(() => {
+      delete unreadCounts[testRoomId];
+      updateTitleBadge();
+      renderRooms(rooms);
+    }, 5000);
+  } else {
+    lines.push('❌ 채팅방 없음 - 뱃지 테스트 불가');
+  }
+
+  // 브라우저 알림 테스트
+  if (Notification.permission === 'granted') {
+    try {
+      new Notification('🔔 알림 테스트', { body: '알림이 정상 작동합니다!' });
+      lines.push('✅ 브라우저 알림 전송 성공');
+    } catch(e) {
+      lines.push('❌ 브라우저 알림 오류: ' + e.message);
+    }
+  } else if (Notification.permission === 'default') {
+    const p = await Notification.requestPermission();
+    lines.push('알림 권한 요청 결과: ' + p);
+  } else {
+    lines.push('❌ 알림 권한 차단됨 - 브라우저 설정에서 허용 필요');
+  }
+
+  // 소리 테스트
+  try { playBeep(); lines.push('✅ 소리 재생 시도'); } catch(e) { lines.push('❌ 소리 오류: ' + e.message); }
+
+  alert(lines.join('\n'));
 }
 
 // 자동 로그인
