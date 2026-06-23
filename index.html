@@ -276,6 +276,7 @@ body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f
           <div class="me-name" id="me-name-disp"></div>
           <div class="me-dept" id="me-dept-disp"></div>
         </div>
+        <button class="logout-btn" id="notif-btn" onclick="toggleNotification()" title="알림 설정">🔔</button>
         <button class="logout-btn" onclick="doLogout()">로그아웃</button>
       </div>
     </div>
@@ -433,6 +434,7 @@ async function startApp() {
   subscribeRealtime();
   updateLastSeen();
   autoDeleteOldMessages();
+  requestNotifPermission();
   window._t1 = setInterval(updateLastSeen, 30000);
   window._t2 = setInterval(loadUsers, 15000);
   window._t3 = setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
@@ -503,6 +505,7 @@ function renderRooms(list) {
     const last = r.lastMsg ? truncate(r.lastMsg.content, 20) : '대화를 시작해보세요';
     const time = r.lastMsg ? formatTime(r.lastMsg.created_at) : '';
     const active = currentRoom && currentRoom.id === r.id ? 'active' : '';
+    const unread = unreadCounts[r.id] || 0;
     return `<div class="room-item ${active}" onclick="openRoom('${r.id}')">
       <div class="room-avatar ${isGroup?'group':''}">${isGroup?'👥':init}</div>
       <div class="room-info">
@@ -511,6 +514,7 @@ function renderRooms(list) {
       </div>
       <div class="room-meta">
         <div class="room-time">${time}</div>
+        ${unread > 0 ? `<div class="unread-badge">${unread}</div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -526,6 +530,7 @@ async function openRoom(roomId) {
     currentRoom = rooms.find(r=>r.id===roomId);
     if (!currentRoom) return;
   }
+  clearUnread(roomId);
   document.querySelectorAll('.room-item').forEach(el => el.classList.remove('active'));
   document.getElementById('empty-chat').style.display = 'none';
   const cm = document.getElementById('chat-main');
@@ -612,6 +617,88 @@ function autoResize(el) {
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
+// ── 알림 시스템 ──
+let notifEnabled = localStorage.getItem('uw_notif') !== 'off';
+let unreadCounts = {};
+
+function updateNotifBtn() {
+  const btn = document.getElementById('notif-btn');
+  if (btn) btn.textContent = notifEnabled ? '🔔' : '🔕';
+}
+
+async function toggleNotification() {
+  if (!notifEnabled) {
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      notifEnabled = true;
+      localStorage.setItem('uw_notif', 'on');
+      alert('알림이 켜졌어요!');
+    } else {
+      alert('브라우저 알림 권한이 거부되어 있어요.\n주소창 왼쪽 자물쇠 아이콘 → 알림 → 허용으로 변경해주세요.');
+      return;
+    }
+  } else {
+    notifEnabled = false;
+    localStorage.setItem('uw_notif', 'off');
+  }
+  updateNotifBtn();
+}
+
+function requestNotifPermission() {
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') { notifEnabled = true; localStorage.setItem('uw_notif', 'on'); }
+      updateNotifBtn();
+    });
+  }
+  updateNotifBtn();
+}
+
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = 880;
+    o.type = 'sine';
+    g.gain.setValueAtTime(0.3, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime + 0.3);
+  } catch(e) {}
+}
+
+function showBrowserNotif(senderName, content, roomId) {
+  if (!notifEnabled || Notification.permission !== 'granted') return;
+  if (document.visibilityState === 'visible' && currentRoom && currentRoom.id === roomId) return;
+  const n = new Notification('💬 ' + senderName, {
+    body: content.length > 50 ? content.slice(0, 50) + '...' : content,
+    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%231a3a5c"/><text y=".9em" font-size="80" x="10">💬</text></svg>',
+    tag: roomId,
+    requireInteraction: false
+  });
+  n.onclick = () => { window.focus(); openRoom(roomId); n.close(); };
+  setTimeout(() => n.close(), 5000);
+}
+
+function addUnread(roomId) {
+  if (currentRoom && currentRoom.id === roomId) return;
+  unreadCounts[roomId] = (unreadCounts[roomId] || 0) + 1;
+  renderRooms(rooms);
+  updateTitleBadge();
+}
+
+function clearUnread(roomId) {
+  delete unreadCounts[roomId];
+  updateTitleBadge();
+}
+
+function updateTitleBadge() {
+  const total = Object.values(unreadCounts).reduce((a,b)=>a+b, 0);
+  document.title = total > 0 ? '(' + total + ') 의왕도시공사 메신저' : '의왕도시공사 메신저';
+}
+
 // ── Realtime 구독 ──
 function subscribeRealtime() {
   if (realtimeSub) realtimeSub.close();
@@ -626,7 +713,15 @@ function subscribeRealtime() {
       const data = JSON.parse(e.data);
       if (data.event === 'INSERT' && data.payload?.record) {
         const msg = data.payload.record;
-        if (msg.content !== undefined) {
+        if (msg.content !== undefined && msg.user_id !== ME.id) {
+          const sender = allUsers.find(u => u.id === msg.user_id);
+          const senderName = sender ? sender.name : '누군가';
+          playBeep();
+          showBrowserNotif(senderName, msg.content, msg.room_id);
+          addUnread(msg.room_id);
+          if (currentRoom && msg.room_id === currentRoom.id) loadMessages();
+          loadRooms();
+        } else if (msg.content !== undefined) {
           if (currentRoom && msg.room_id === currentRoom.id) loadMessages();
           loadRooms();
         } else {
