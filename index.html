@@ -258,35 +258,7 @@ body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f
     <p>이름을 입력하고 접속하세요</p>
     <input type="text" id="login-name" placeholder="이름 (예: 홍길동)" maxlength="10" />
     <select id="login-dept">
-      <option value="">부서 선택</option>
-      <optgroup label="기획조정실">
-        <option>전략기획팀</option>
-        <option>홍보전산팀</option>
-        <option>법무감사팀</option>
-      </optgroup>
-      <optgroup label="경영사업본부 · 경영지원처">
-        <option>경영지원팀</option>
-        <option>인사노무팀</option>
-        <option>재무회계팀</option>
-      </optgroup>
-      <optgroup label="경영사업본부 · 생활체육처">
-        <option>국민체육센터팀</option>
-        <option>부곡스포츠센터팀</option>
-        <option>백운스포츠센터팀</option>
-        <option>포일스포츠센터팀</option>
-        <option>재난안전팀</option>
-      </optgroup>
-      <optgroup label="개발사업본부 · 개발사업처">
-        <option>개발사업팀</option>
-        <option>신규사업팀</option>
-      </optgroup>
-      <optgroup label="개발사업본부 · 교통레저처">
-        <option>교통시설팀</option>
-        <option>왕송호수레저팀</option>
-        <option>바라산휴양림팀</option>
-        <option>개발지원팀</option>
-        <option>교통약자이동팀</option>
-      </optgroup>
+      <option value="">부서 불러오는 중...</option>
     </select>
     <button class="login-btn" onclick="doLogin()">접속하기</button>
     <div class="login-err" id="login-err"></div>
@@ -390,6 +362,27 @@ async function api(path, method='GET', body=null) {
   }
   const t = await r.text();
   return t ? JSON.parse(t) : null;
+}
+
+// ── 부서 목록 동적 로드 ──
+async function loadDepartments() {
+  try {
+    const sel = document.getElementById('login-dept');
+    const users = await api('users?select=department&order=department');
+    const depts = [...new Set(users.map(u => u.department).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">부서 선택</option>';
+    depts.forEach(d => {
+      const o = document.createElement('option');
+      o.value = d; o.textContent = d;
+      sel.appendChild(o);
+    });
+    if (depts.length === 0) {
+      sel.innerHTML = '<option value="">등록된 부서 없음 - 직접 입력</option>';
+    }
+  } catch(e) {
+    const sel = document.getElementById('login-dept');
+    sel.innerHTML = '<option value="">부서 로드 실패 - 새로고침 해주세요</option>';
+  }
 }
 
 // ── 로그인 ──
@@ -791,6 +784,7 @@ async function autoDeleteOldMessages() {
 // 자동 로그인
 const saved = localStorage.getItem('uw_me');
 if (saved) { ME = JSON.parse(saved); startApp(); }
+else { loadDepartments(); }
 </script>
 </body>
 </html>
