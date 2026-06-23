@@ -414,6 +414,13 @@ async function doLogin() {
       await api('users?id=eq.' + users[0].id, 'PATCH', { last_seen: new Date().toISOString(), department: dept });
     }
     ME = Array.isArray(users) ? users[0] : users;
+    // 로그인 즉시 online + last_seen 갱신
+    await api('users?id=eq.' + ME.id, 'PATCH', {
+      last_seen: new Date().toISOString(),
+      status: 'online'
+    });
+    ME.status = 'online';
+    ME.last_seen = new Date().toISOString();
     localStorage.setItem('uw_me', JSON.stringify(ME));
     startApp();
   } catch(e) { showErr('접속 실패: ' + e.message); }
@@ -447,7 +454,7 @@ async function startApp() {
   updateLastSeen();
   autoDeleteOldMessages();
   requestNotifPermission();
-  window._t1 = setInterval(updateLastSeen, 30000);
+  window._t1 = setInterval(updateLastSeen, 20000);
   window._t2 = setInterval(loadUsers, 15000);
   window._t3 = setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
   window._t4 = setInterval(loadRooms, 2000);
@@ -489,6 +496,7 @@ function renderOnlineList() {
   const now = new Date();
   const el = document.getElementById('online-list');
   el.innerHTML = allUsers.map(u => {
+    if (u.id === ME.id) return ''; // 나 자신 제외
     const diff = (now - new Date(u.last_seen)) / 1000;
     const online = diff < 60;
     const init = u.name.slice(0,2);
@@ -610,13 +618,21 @@ async function openRoom(roomId) {
   document.getElementById('ch-name').textContent = currentRoom.displayName;
 
   if (!isGroup && currentRoom.otherIds.length > 0) {
-    const other = allUsers.find(u=>u.id===currentRoom.otherIds[0]);
-    const diff = other ? (new Date() - new Date(other.last_seen))/1000 : 999;
-    if (other) {
-      const st = getStatusInfo(getEffectiveStatus(other));
-      const msg = other.status_msg ? ` · ${other.status_msg}` : '';
-      document.getElementById('ch-sub').innerHTML =
-        `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${st.color};margin-right:4px;"></span>${st.label}${msg}`;
+    // 최신 상태 직접 fetch
+    try {
+      const freshUsers = await api('users?id=eq.' + currentRoom.otherIds[0] + '&select=*');
+      const other = freshUsers && freshUsers[0] ? freshUsers[0] : allUsers.find(u=>u.id===currentRoom.otherIds[0]);
+      if (other) {
+        // allUsers도 갱신
+        const idx = allUsers.findIndex(u=>u.id===other.id);
+        if (idx >= 0) allUsers[idx] = other;
+        const st = getStatusInfo(getEffectiveStatus(other));
+        const msg = other.status_msg ? ` · ${other.status_msg}` : '';
+        document.getElementById('ch-sub').innerHTML =
+          `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${st.color};margin-right:4px;"></span>${st.label}${msg}`;
+      }
+    } catch(e) {
+      document.getElementById('ch-sub').textContent = '';
     }
   } else {
     document.getElementById('ch-sub').textContent = '단체 채팅방';
@@ -938,18 +954,30 @@ function switchSTab(t) {
 // ── 유틸 ──
 function truncate(s, n) { return s.length > n ? s.slice(0,n)+'...' : s; }
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+// 한국 시간(KST = UTC+9) 변환
+function toKST(iso) {
+  const d = new Date(iso);
+  return new Date(d.getTime() + 9 * 60 * 60 * 1000);
+}
 function formatTime(iso) {
-  const d = new Date(iso); const now = new Date();
-  if (d.toDateString()===now.toDateString()) return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
-  return (d.getMonth()+1)+'/'+ d.getDate();
+  const d = toKST(iso);
+  const now = toKST(new Date().toISOString());
+  if (d.toDateString() === now.toDateString())
+    return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+  return (d.getMonth()+1) + '/' + d.getDate();
 }
 function formatTimeShort(iso) {
-  const d = new Date(iso);
-  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+  const d = toKST(iso);
+  const h = d.getHours();
+  const m = d.getMinutes().toString().padStart(2,'0');
+  const ampm = h < 12 ? '오전' : '오후';
+  const h12 = h % 12 || 12;
+  return `${ampm} ${h12}:${m}`;
 }
 function formatDate(iso) {
-  const d = new Date(iso);
-  return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';
+  const d = toKST(iso);
+  const days = ['일','월','화','수','목','금','토'];
+  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
 }
 
 
@@ -1020,7 +1048,7 @@ function getAutoStatus(lastSeen) {
 function getEffectiveStatus(user) {
   // 오프라인 판단은 last_seen 기준 (접속 끊기면 DB status 못 바꾸니까)
   const diff = (Date.now() - new Date(user.last_seen).getTime()) / 1000;
-  if (diff > 90) return 'offline';  // 1분30초 이상 → 오프라인
+  if (diff > 120) return 'offline';  // 2분 이상 → 오프라인
   // 그 외는 DB status 값 그대로
   return user.status || 'online';
 }
@@ -1146,8 +1174,18 @@ async function testNotif() {
 
 // 자동 로그인
 const saved = localStorage.getItem('uw_me');
-if (saved) { ME = JSON.parse(saved); startApp(); }
-else { loadDepartments(); }
+if (saved) {
+  ME = JSON.parse(saved);
+  // 자동 로그인 시에도 즉시 online으로
+  api('users?id=eq.' + ME.id, 'PATCH', {
+    last_seen: new Date().toISOString(),
+    status: 'online'
+  }).then(() => {
+    ME.status = 'online';
+    ME.last_seen = new Date().toISOString();
+  });
+  startApp();
+} else { loadDepartments(); }
 </script>
 </body>
 </html>
