@@ -474,7 +474,7 @@ function renderOnlineList() {
 
 // ── 채팅방 목록 ──
 let lastSeenMsgIds = {};
-let roomsInitialized = false;  // 첫 로드 완료 여부
+let roomsInitialized = false;
 
 async function loadRooms() {
   if (!ME || !ME.id) return;
@@ -490,41 +490,44 @@ async function loadRooms() {
     const otherIds = allMembers.map(m=>m.user_id).filter(id=>id!==ME.id);
     let displayName = r.name || '';
     if (r.type === 'direct') {
-      if (otherIds.length > 0) {
-        const other = allUsers.find(u=>u.id===otherIds[0]);
-        displayName = other ? other.name : '알 수 없음';
-      } else {
-        displayName = '알 수 없음';
-      }
+      displayName = otherIds.length > 0
+        ? (allUsers.find(u=>u.id===otherIds[0]) || {name:'알 수 없음'}).name
+        : '알 수 없음';
     } else {
       displayName = r.name || '단체방';
     }
     const lastMsg = lastMsgs[i][0] || null;
-
-    if (!roomsInitialized) {
-      // 첫 로드: 현재 마지막 메시지 ID만 기억 (알림 없음)
-      if (lastMsg) lastSeenMsgIds[r.id] = lastMsg.id;
-    } else {
-      // 이후 폴링: 새 메시지 감지
-      if (lastMsg && lastMsg.user_id !== ME.id) {
-        const prevId = lastSeenMsgIds[r.id];
-        if (prevId !== undefined && prevId !== lastMsg.id) {
-          const isCurrentRoom = currentRoom && currentRoom.id === r.id;
-          if (!isCurrentRoom) {
-            unreadCounts[r.id] = (unreadCounts[r.id] || 0) + 1;
-            updateTitleBadge();
-            playBeep();
-            const sender = allUsers.find(u => u.id === lastMsg.user_id);
-            showBrowserNotif(sender ? sender.name : '누군가', lastMsg.content, r.id);
-          }
-        }
-        if (lastMsg) lastSeenMsgIds[r.id] = lastMsg.id;
-      } else if (lastMsg) {
-        lastSeenMsgIds[r.id] = lastMsg.id;
-      }
-    }
     return { ...r, displayName, lastMsg, otherIds };
   }));
+
+  // ── 알림 처리 (loadRooms와 완전히 분리) ──
+  rooms.forEach(r => {
+    const lastMsg = r.lastMsg;
+    if (!lastMsg) return;
+    const prevId = lastSeenMsgIds[r.id];
+    // 첫 로드: ID만 기억
+    if (!roomsInitialized) {
+      lastSeenMsgIds[r.id] = lastMsg.id;
+      return;
+    }
+    // 내가 보낸 메시지면 스킵
+    if (lastMsg.user_id === ME.id) {
+      lastSeenMsgIds[r.id] = lastMsg.id;
+      return;
+    }
+    // 새 메시지 감지
+    if (prevId !== lastMsg.id) {
+      lastSeenMsgIds[r.id] = lastMsg.id;
+      const isCurrentRoom = currentRoom && currentRoom.id === r.id;
+      if (!isCurrentRoom) {
+        unreadCounts[r.id] = (unreadCounts[r.id] || 0) + 1;
+        updateTitleBadge();
+        playBeep();
+        const sender = allUsers.find(u => u.id === lastMsg.user_id);
+        showBrowserNotif(sender ? sender.name : '누군가', lastMsg.content, r.id);
+      }
+    }
+  });
 
   if (!roomsInitialized) roomsInitialized = true;
   renderRooms(rooms);
@@ -682,11 +685,21 @@ async function toggleNotification() {
 }
 
 function requestNotifPermission() {
-  if (Notification.permission === 'default') {
+  if (Notification.permission === 'granted') {
+    notifEnabled = localStorage.getItem('uw_notif') !== 'off';
+  } else if (Notification.permission === 'default') {
     Notification.requestPermission().then(p => {
-      if (p === 'granted') { notifEnabled = true; localStorage.setItem('uw_notif', 'on'); }
+      if (p === 'granted') {
+        notifEnabled = true;
+        localStorage.setItem('uw_notif', 'on');
+      } else {
+        notifEnabled = false;
+      }
       updateNotifBtn();
     });
+  } else {
+    // denied - 브라우저 알림 불가, 뱃지/소리만 작동
+    notifEnabled = false;
   }
   updateNotifBtn();
 }
@@ -707,7 +720,8 @@ function playBeep() {
 }
 
 function showBrowserNotif(senderName, content, roomId) {
-  if (!notifEnabled || Notification.permission !== 'granted') return;
+  if (Notification.permission !== 'granted') return;
+  if (!notifEnabled) return;
   if (document.visibilityState === 'visible' && currentRoom && currentRoom.id === roomId) return;
   const n = new Notification('💬 ' + senderName, {
     body: content.length > 50 ? content.slice(0, 50) + '...' : content,
@@ -722,8 +736,8 @@ function showBrowserNotif(senderName, content, roomId) {
 function addUnread(roomId) {
   if (currentRoom && currentRoom.id === roomId) return;
   unreadCounts[roomId] = (unreadCounts[roomId] || 0) + 1;
-  renderRooms(rooms);
   updateTitleBadge();
+  if (rooms.length > 0) renderRooms(rooms);
 }
 
 function clearUnread(roomId) {
