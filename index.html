@@ -488,10 +488,16 @@ async function loadRooms() {
   rooms = await Promise.all(roomData.map(async (r, i) => {
     const allMembers = await api('room_members?room_id=eq.' + r.id + '&select=user_id');
     const otherIds = allMembers.map(m=>m.user_id).filter(id=>id!==ME.id);
-    let displayName = r.name;
-    if (r.type === 'direct' && otherIds.length > 0) {
-      const other = allUsers.find(u=>u.id===otherIds[0]);
-      displayName = other ? other.name : '알 수 없음';
+    let displayName = r.name || '';
+    if (r.type === 'direct') {
+      if (otherIds.length > 0) {
+        const other = allUsers.find(u=>u.id===otherIds[0]);
+        displayName = other ? other.name : '알 수 없음';
+      } else {
+        displayName = '알 수 없음';
+      }
+    } else {
+      displayName = r.name || '단체방';
     }
     const lastMsg = lastMsgs[i][0] || null;
 
@@ -526,12 +532,13 @@ async function loadRooms() {
 
 function renderRooms(list) {
   const q = document.getElementById('room-search').value.toLowerCase();
-  const filtered = list.filter(r => r.displayName.toLowerCase().includes(q));
+  const filtered = list.filter(r => (r.displayName || '').toLowerCase().includes(q));
   const el = document.getElementById('room-list');
   if (!filtered.length) { el.innerHTML = '<div style="text-align:center;padding:24px;font-size:13px;color:rgba(255,255,255,0.4);">채팅방이 없습니다</div>'; return; }
   el.innerHTML = filtered.map(r => {
     const isGroup = r.type === 'group';
-    const init = r.displayName.slice(0,2);
+    const displayName = r.displayName || '(이름 없음)';
+    const init = displayName.slice(0,2);
     const last = r.lastMsg ? truncate(r.lastMsg.content, 20) : '대화를 시작해보세요';
     const time = r.lastMsg ? formatTime(r.lastMsg.created_at) : '';
     const active = currentRoom && currentRoom.id === r.id ? 'active' : '';
@@ -539,7 +546,7 @@ function renderRooms(list) {
     return `<div class="room-item ${active}" onclick="openRoom('${r.id}')">
       <div class="room-avatar ${isGroup?'group':''}">${isGroup?'👥':init}</div>
       <div class="room-info">
-        <div class="room-name">${r.displayName}</div>
+        <div class="room-name">${r.displayName || '(이름 없음)'}</div>
         <div class="room-last">${last}</div>
       </div>
       <div class="room-meta">
