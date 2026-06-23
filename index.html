@@ -271,10 +271,13 @@ body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f
     <div class="sidebar-header">
       <h1>💬 의왕 메신저</h1>
       <div class="me-info">
-        <div class="me-avatar" id="me-avatar"></div>
-        <div>
+        <div style="position:relative;cursor:pointer;" onclick="openStatusPicker()">
+          <div class="me-avatar" id="me-avatar"></div>
+          <span id="my-status-dot" style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#22c55e;border:2px solid #1a3a5c;"></span>
+        </div>
+        <div style="flex:1;min-width:0;cursor:pointer;" onclick="openStatusPicker()">
           <div class="me-name" id="me-name-disp"></div>
-          <div class="me-dept" id="me-dept-disp"></div>
+          <div id="my-status-label" style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:1px;">온라인</div>
         </div>
         <button class="logout-btn" id="notif-btn" onclick="toggleNotification()" title="알림 설정">🔔</button>
         <button class="logout-btn" onclick="doLogout()">로그아웃</button>
@@ -336,6 +339,12 @@ body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f
       <button class="btn-cancel" onclick="closeModal()">취소</button>
       <button class="btn-confirm" onclick="startChat()">채팅 시작</button>
     </div>
+  </div>
+</div>
+
+<!-- 상태 설정 모달 -->
+<div id="status-modal-bg" onclick="closeStatusModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:200;align-items:center;justify-content:center;display:none;">
+  <div id="status-modal-content" onclick="event.stopPropagation()" style="background:#fff;border-radius:14px;padding:20px;width:300px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
   </div>
 </div>
 
@@ -430,7 +439,7 @@ async function startApp() {
   document.getElementById('app').style.display = 'flex';
   document.getElementById('me-avatar').textContent = ME.name.slice(0,2);
   document.getElementById('me-name-disp').textContent = ME.name;
-  document.getElementById('me-dept-disp').textContent = ME.department || '';
+  updateMyStatusDisplay();
   appStartTime = Date.now();
   await loadUsers();
   await loadRooms();
@@ -444,9 +453,24 @@ async function startApp() {
   window._t4 = setInterval(loadRooms, 2000);
 }
 
+let lastActivity = Date.now();
+document.addEventListener('mousemove', () => lastActivity = Date.now());
+document.addEventListener('keydown', () => lastActivity = Date.now());
+
 async function updateLastSeen() {
   if (!ME) return;
-  await api('users?id=eq.' + ME.id, 'PATCH', { last_seen: new Date().toISOString() });
+  const idleSec = (Date.now() - lastActivity) / 1000;
+  // 5분 이상 미활동이면 away로 자동 전환 (수동 설정 없을 때만)
+  let autoStatus = idleSec > 300 ? 'away' : 'online';
+  if (ME.status && !['online','away','offline'].includes(ME.status)) {
+    autoStatus = ME.status; // 수동 설정 유지
+  }
+  await api('users?id=eq.' + ME.id, 'PATCH', {
+    last_seen: new Date().toISOString(),
+    status: autoStatus
+  });
+  ME.status = autoStatus;
+  updateMyStatusDisplay();
 }
 
 // ── 사용자 목록 ──
@@ -583,8 +607,12 @@ async function openRoom(roomId) {
   if (!isGroup && currentRoom.otherIds.length > 0) {
     const other = allUsers.find(u=>u.id===currentRoom.otherIds[0]);
     const diff = other ? (new Date() - new Date(other.last_seen))/1000 : 999;
-    document.getElementById('ch-sub').innerHTML = diff < 60
-      ? '<span class="online-dot"></span>온라인' : other ? other.department||'' : '';
+    if (other) {
+      const st = getStatusInfo(getEffectiveStatus(other));
+      const msg = other.status_msg ? ` · ${other.status_msg}` : '';
+      document.getElementById('ch-sub').innerHTML =
+        `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${st.color};margin-right:4px;"></span>${st.label}${msg}`;
+    }
   } else {
     document.getElementById('ch-sub').textContent = '단체 채팅방';
   }
@@ -965,6 +993,102 @@ async function autoDeleteOldMessages() {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     await api('messages?created_at=lt.' + cutoff, 'DELETE');
   } catch(e) { console.error('자동삭제 오류:', e); }
+}
+
+// ── 상태 관련 ──
+const STATUS_OPTIONS = [
+  { value: 'online',    label: '온라인',   color: '#22c55e', emoji: '🟢' },
+  { value: 'away',      label: '자리비움', color: '#f59e0b', emoji: '🟡' },
+  { value: 'busy',      label: '부재중',   color: '#ef4444', emoji: '🔴' },
+  { value: 'chat',      label: '채팅가능', color: '#3b82f6', emoji: '💬' },
+  { value: 'dnd',       label: '방해금지', color: '#6b7280', emoji: '🔕' },
+  { value: 'offline',   label: '오프라인', color: '#374151', emoji: '⬛' },
+];
+
+function getAutoStatus(lastSeen) {
+  const diff = (Date.now() - new Date(lastSeen).getTime()) / 1000;
+  if (diff < 60)  return 'online';
+  if (diff < 300) return 'away';
+  return 'offline';
+}
+
+function getEffectiveStatus(user) {
+  // 수동 설정이 있으면 우선, 없으면 last_seen 기반 자동
+  if (user.status && !['online','away','offline'].includes(user.status)) {
+    return user.status; // busy, chat, dnd
+  }
+  return getAutoStatus(user.last_seen);
+}
+
+function getStatusInfo(statusValue) {
+  return STATUS_OPTIONS.find(s => s.value === statusValue) || STATUS_OPTIONS[0];
+}
+
+function statusDot(user, size=8) {
+  const s = getStatusInfo(getEffectiveStatus(user));
+  return `<span style="display:inline-block;width:${size}px;height:${size}px;border-radius:50%;background:${s.color};flex-shrink:0;"></span>`;
+}
+
+// 상태 변경 팝업
+function openStatusPicker() {
+  const cur = getEffectiveStatus(ME);
+  const opts = STATUS_OPTIONS.map(s => `
+    <div onclick="setMyStatus('${s.value}')" style="
+      display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;
+      border-radius:8px;background:${s.value===cur?'#e8eef8':'transparent'};
+      transition:background 0.1s;
+    " onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='${s.value===cur?'#e8eef8':'transparent'}'">
+      <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0;"></span>
+      <span style="font-size:14px;font-weight:${s.value===cur?'600':'400'}">${s.label}</span>
+    </div>`).join('');
+
+  const curMsg = ME.status_msg || '';
+  document.getElementById('status-modal-content').innerHTML = `
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;">상태 설정</h3>
+    <div style="margin-bottom:12px;">${opts}</div>
+    <input type="text" id="status-msg-input" value="${curMsg}" maxlength="30"
+      placeholder="상태 메시지 입력 (예: 오늘 외근입니다)"
+      style="width:100%;padding:9px 12px;border:1.5px solid #e0e4ef;border-radius:8px;font-size:13px;font-family:inherit;outline:none;"
+    />
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button onclick="closeStatusModal()" style="flex:1;padding:9px;border-radius:8px;border:none;background:#f5f5f5;font-family:inherit;cursor:pointer;">취소</button>
+      <button onclick="saveStatus()" style="flex:1;padding:9px;border-radius:8px;border:none;background:#1a3a5c;color:#fff;font-family:inherit;cursor:pointer;font-weight:500;">저장</button>
+    </div>`;
+  document.getElementById('status-modal-bg').style.display = 'flex';
+}
+
+function closeStatusModal() {
+  document.getElementById('status-modal-bg').style.display = 'none';
+}
+
+async function setMyStatus(value) {
+  ME.status = value;
+  // 선택 즉시 UI 반영
+  document.querySelectorAll('#status-modal-content > div:nth-child(2) > div').forEach((el, i) => {
+    el.style.background = STATUS_OPTIONS[i].value === value ? '#e8eef8' : 'transparent';
+    el.querySelector('span:last-child').style.fontWeight = STATUS_OPTIONS[i].value === value ? '600' : '400';
+  });
+  updateMyStatusDisplay();
+}
+
+async function saveStatus() {
+  const msg = document.getElementById('status-msg-input').value.trim();
+  ME.status = ME.status || 'online';
+  ME.status_msg = msg;
+  localStorage.setItem('uw_me', JSON.stringify(ME));
+  try {
+    await api('users?id=eq.' + ME.id, 'PATCH', { status: ME.status, status_msg: msg });
+  } catch(e) { console.error(e); }
+  updateMyStatusDisplay();
+  closeStatusModal();
+}
+
+function updateMyStatusDisplay() {
+  const s = getStatusInfo(getEffectiveStatus(ME));
+  const dot = document.getElementById('my-status-dot');
+  const label = document.getElementById('my-status-label');
+  if (dot) { dot.style.background = s.color; }
+  if (label) { label.textContent = ME.status_msg ? ME.status_msg : s.label; }
 }
 
 // ── 알림 테스트 ──
