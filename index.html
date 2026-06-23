@@ -451,10 +451,10 @@ async function startApp() {
   await loadUsers();
   await loadRooms();
   subscribeRealtime();
-  updateLastSeen();
+  await updateLastSeen();
   autoDeleteOldMessages();
   requestNotifPermission();
-  window._t1 = setInterval(updateLastSeen, 20000);
+  window._t1 = setInterval(updateLastSeen, 10000);
   window._t2 = setInterval(loadUsers, 8000);
   window._t3 = setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
   window._t4 = setInterval(loadRooms, 2000);
@@ -465,24 +465,23 @@ document.addEventListener('mousemove', () => lastActivity = Date.now());
 document.addEventListener('keydown', () => lastActivity = Date.now());
 
 async function updateLastSeen() {
-  if (!ME) return;
+  if (!ME || !ME.id) return;
   const idleSec = (Date.now() - lastActivity) / 1000;
-
-  // 수동 설정 상태 (busy, chat, dnd) 는 건드리지 않음
   const isManual = ME.status && ['busy','chat','dnd'].includes(ME.status);
   let newStatus = ME.status || 'online';
-
   if (!isManual) {
-    // 자동 상태만 업데이트
     newStatus = idleSec > 300 ? 'away' : 'online';
     ME.status = newStatus;
   }
-
-  await api('users?id=eq.' + ME.id, 'PATCH', {
-    last_seen: new Date().toISOString(),
-    status: newStatus
-  });
-  updateMyStatusDisplay();
+  try {
+    await api('users?id=eq.' + ME.id, 'PATCH', {
+      last_seen: new Date().toISOString(),
+      status: newStatus
+    });
+    updateMyStatusDisplay();
+  } catch(e) {
+    console.error('last_seen 업데이트 실패:', e);
+  }
 }
 
 // ── 사용자 목록 ──
@@ -1059,7 +1058,7 @@ function getAutoStatus(lastSeen) {
 function getEffectiveStatus(user) {
   // 오프라인 판단은 last_seen 기준 (접속 끊기면 DB status 못 바꾸니까)
   const diff = (Date.now() - new Date(user.last_seen).getTime()) / 1000;
-  if (diff > 120) return 'offline';  // 2분 이상 → 오프라인
+  if (diff > 45) return 'offline';   // 45초 이상 → 오프라인
   // 그 외는 DB status 값 그대로
   return user.status || 'online';
 }
