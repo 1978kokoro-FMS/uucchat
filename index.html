@@ -304,10 +304,11 @@ body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f
     <div id="chat-main" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
       <div class="chat-header">
         <div class="chat-header-avatar" id="ch-avatar"></div>
-        <div>
+        <div style="flex:1;">
           <div class="chat-header-name" id="ch-name"></div>
           <div class="chat-header-sub" id="ch-sub"></div>
         </div>
+        <button onclick="leaveRoom()" style="background:none;border:1px solid #ffcccc;color:#e24b4a;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;">나가기 🚪</button>
       </div>
       <div class="messages-wrap" id="messages-wrap"></div>
       <div class="chat-input-wrap">
@@ -355,6 +356,7 @@ async function api(path, method='GET', body=null) {
   const headers = { ...H };
   if (method === 'POST') headers['Prefer'] = 'return=representation';
   if (method === 'PATCH') headers['Prefer'] = 'return=representation';
+  if (method === 'DELETE') headers['Prefer'] = 'return=representation';
   const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, opts);
@@ -408,8 +410,10 @@ async function startApp() {
   await loadRooms();
   subscribeRealtime();
   updateLastSeen();
+  autoDeleteOldMessages();
   setInterval(updateLastSeen, 30000);
   setInterval(loadUsers, 15000);
+  setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
 }
 
 async function updateLastSeen() {
@@ -711,6 +715,37 @@ function formatTimeShort(iso) {
 function formatDate(iso) {
   const d = new Date(iso);
   return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';
+}
+
+
+// ── 채팅방 나가기 (메시지 즉시 삭제) ──
+async function leaveRoom() {
+  if (!currentRoom) return;
+  const confirm_leave = confirm('채팅방을 나가면 대화 내용이 모두 삭제됩니다. 나가시겠어요?');
+  if (!confirm_leave) return;
+  try {
+    await api('messages?room_id=eq.' + currentRoom.id, 'DELETE');
+    await api('room_members?room_id=eq.' + currentRoom.id + '&user_id=eq.' + ME.id, 'DELETE');
+    const remaining = await api('room_members?room_id=eq.' + currentRoom.id + '&select=user_id');
+    if (!remaining || remaining.length === 0) {
+      await api('rooms?id=eq.' + currentRoom.id, 'DELETE');
+    }
+    currentRoom = null;
+    document.getElementById('chat-main').style.display = 'none';
+    document.getElementById('empty-chat').style.display = 'flex';
+    await loadRooms();
+  } catch(e) {
+    alert('나가기 오류: ' + e.message);
+    console.error(e);
+  }
+}
+
+// ── 24시간 지난 메시지 자동 삭제 ──
+async function autoDeleteOldMessages() {
+  try {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    await api('messages?created_at=lt.' + cutoff, 'DELETE');
+  } catch(e) { console.error('자동삭제 오류:', e); }
 }
 
 // 자동 로그인
