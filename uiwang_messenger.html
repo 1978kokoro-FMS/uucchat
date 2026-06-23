@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>의왕도시공사 메신저</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f0f2f5; height: 100vh; display: flex; flex-direction: column; }
+
+/* ── 로그인 ── */
+#login-screen {
+  display: flex; align-items: center; justify-content: center;
+  height: 100vh; background: #f0f2f5;
+}
+.login-box {
+  background: #fff; border-radius: 16px; padding: 40px 36px;
+  width: 360px; box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  text-align: center;
+}
+.login-logo { width: 52px; height: 52px; background: #1a3a5c; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+.login-logo span { color: #fff; font-size: 22px; font-weight: 700; }
+.login-box h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; color: #111; }
+.login-box p { font-size: 13px; color: #888; margin-bottom: 24px; }
+.login-box input {
+  width: 100%; padding: 11px 14px; border: 1.5px solid #e0e4ef;
+  border-radius: 8px; font-size: 15px; font-family: inherit;
+  outline: none; margin-bottom: 10px;
+}
+.login-box input:focus { border-color: #1a3a5c; }
+.login-box select {
+  width: 100%; padding: 11px 14px; border: 1.5px solid #e0e4ef;
+  border-radius: 8px; font-size: 15px; font-family: inherit;
+  outline: none; margin-bottom: 18px; background: #fff; color: #333;
+}
+.login-btn {
+  width: 100%; padding: 12px; background: #1a3a5c; color: #fff;
+  border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+}
+.login-btn:hover { background: #25527d; }
+.login-err { color: #e24b4a; font-size: 13px; margin-top: 8px; display: none; }
+
+/* ── 메인 레이아웃 ── */
+#app { display: none; height: 100vh; flex-direction: row; }
+
+/* 사이드바 */
+.sidebar {
+  width: 300px; min-width: 260px; background: #1a3a5c;
+  display: flex; flex-direction: column; height: 100vh;
+}
+.sidebar-header {
+  padding: 18px 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.10);
+}
+.sidebar-header h1 { font-size: 16px; font-weight: 700; color: #fff; }
+.me-info { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.me-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(255,255,255,0.18); display: flex; align-items: center;
+  justify-content: center; font-size: 13px; font-weight: 600; color: #fff; flex-shrink: 0;
+}
+.me-name { font-size: 14px; color: #fff; font-weight: 500; }
+.me-dept { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 1px; }
+.logout-btn {
+  margin-left: auto; font-size: 11px; color: rgba(255,255,255,0.5);
+  background: none; border: none; cursor: pointer; padding: 4px 6px;
+}
+.logout-btn:hover { color: #fff; }
+
+.sidebar-tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,0.10); }
+.stab {
+  flex: 1; padding: 10px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.55);
+  cursor: pointer; border-bottom: 2px solid transparent;
+}
+.stab.active { color: #fff; border-bottom-color: #5b9bd5; }
+
+.sidebar-search {
+  padding: 10px 12px;
+}
+.sidebar-search input {
+  width: 100%; padding: 7px 12px; background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
+  font-size: 13px; color: #fff; font-family: inherit; outline: none;
+}
+.sidebar-search input::placeholder { color: rgba(255,255,255,0.4); }
+
+.room-list { flex: 1; overflow-y: auto; }
+.room-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; cursor: pointer; transition: background 0.1s;
+}
+.room-item:hover { background: rgba(255,255,255,0.07); }
+.room-item.active { background: rgba(255,255,255,0.13); }
+.room-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(255,255,255,0.18); display: flex; align-items: center;
+  justify-content: center; font-size: 14px; font-weight: 600; color: #fff; flex-shrink: 0;
+}
+.room-avatar.group { border-radius: 10px; font-size: 16px; }
+.room-info { flex: 1; min-width: 0; }
+.room-name { font-size: 13px; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room-last { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.room-time { font-size: 10px; color: rgba(255,255,255,0.4); }
+.unread-badge {
+  background: #e24b4a; color: #fff; font-size: 10px; font-weight: 700;
+  border-radius: 10px; padding: 1px 6px; min-width: 18px; text-align: center;
+}
+
+.new-chat-btn {
+  margin: 10px 12px; padding: 9px; background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.20); border-radius: 8px;
+  color: #fff; font-size: 13px; font-family: inherit; cursor: pointer; text-align: center;
+}
+.new-chat-btn:hover { background: rgba(255,255,255,0.18); }
+
+/* 채팅 영역 */
+.chat-area { flex: 1; display: flex; flex-direction: column; background: #fff; min-width: 0; }
+
+.chat-header {
+  padding: 14px 20px; border-bottom: 1px solid #eee;
+  display: flex; align-items: center; gap: 12px; background: #fff;
+}
+.chat-header-avatar {
+  width: 38px; height: 38px; border-radius: 50%; background: #e8eef8;
+  display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #1a3a5c;
+}
+.chat-header-avatar.group { border-radius: 10px; }
+.chat-header-name { font-size: 16px; font-weight: 600; color: #111; }
+.chat-header-sub { font-size: 12px; color: #888; margin-top: 1px; }
+.online-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; display: inline-block; margin-right: 4px; }
+
+.messages-wrap { flex: 1; overflow-y: auto; padding: 20px 20px 10px; background: #f8f9fc; }
+.msg-date-divider { text-align: center; margin: 16px 0; }
+.msg-date-divider span { font-size: 11px; color: #aaa; background: #f8f9fc; padding: 2px 12px; border-radius: 10px; border: 1px solid #e8e8e8; }
+
+.msg-row { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 4px; }
+.msg-row.mine { flex-direction: row-reverse; }
+.msg-row.mine + .msg-row:not(.mine),
+.msg-row:not(.mine) + .msg-row.mine { margin-top: 12px; }
+
+.msg-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #dde5f4; display: flex; align-items: center;
+  justify-content: center; font-size: 12px; font-weight: 600; color: #1a3a5c;
+  flex-shrink: 0; align-self: flex-start;
+}
+.msg-avatar.hidden { visibility: hidden; }
+.msg-content { max-width: 60%; }
+.msg-sender { font-size: 11px; color: #888; margin-bottom: 3px; padding-left: 2px; }
+.msg-bubble {
+  padding: 9px 13px; border-radius: 14px; font-size: 14px; line-height: 1.5;
+  background: #fff; border: 1px solid #e8e8e8; color: #111; word-break: break-word;
+  display: inline-block; max-width: 100%;
+}
+.msg-row.mine .msg-bubble { background: #1a3a5c; color: #fff; border-color: #1a3a5c; }
+.msg-time { font-size: 10px; color: #bbb; margin: 0 4px 2px; white-space: nowrap; }
+
+.chat-input-wrap {
+  padding: 12px 16px; border-top: 1px solid #eee; background: #fff;
+  display: flex; align-items: flex-end; gap: 10px;
+}
+.chat-input {
+  flex: 1; padding: 10px 14px; border: 1.5px solid #e0e4ef; border-radius: 22px;
+  font-size: 14px; font-family: inherit; resize: none; outline: none;
+  max-height: 120px; overflow-y: auto; line-height: 1.5;
+}
+.chat-input:focus { border-color: #1a3a5c; }
+.send-btn {
+  width: 40px; height: 40px; background: #1a3a5c; border: none; border-radius: 50%;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.send-btn:hover { background: #25527d; }
+.send-btn svg { width: 18px; height: 18px; fill: #fff; }
+.send-btn:disabled { background: #ccc; cursor: default; }
+
+/* 빈 화면 */
+.empty-chat {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; color: #ccc;
+}
+.empty-chat .icon { font-size: 48px; margin-bottom: 12px; }
+.empty-chat p { font-size: 15px; }
+
+/* 새 채팅 모달 */
+.modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.35); z-index: 100;
+  align-items: center; justify-content: center;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: #fff; border-radius: 14px; padding: 24px;
+  width: 380px; max-width: 95vw; max-height: 80vh;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.modal h3 { font-size: 16px; font-weight: 600; }
+.modal input, .modal select {
+  width: 100%; padding: 9px 12px; border: 1.5px solid #e0e4ef;
+  border-radius: 8px; font-size: 14px; font-family: inherit; outline: none;
+}
+.modal input:focus { border-color: #1a3a5c; }
+.user-pick-list { flex: 1; overflow-y: auto; max-height: 260px; border: 1px solid #eee; border-radius: 8px; }
+.user-pick-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; cursor: pointer; transition: background 0.1s;
+}
+.user-pick-item:hover { background: #f5f7ff; }
+.user-pick-item.selected { background: #e8eef8; }
+.pick-avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: #dde5f4;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: #1a3a5c; flex-shrink: 0;
+}
+.pick-name { font-size: 14px; font-weight: 500; }
+.pick-dept { font-size: 11px; color: #888; }
+.check-mark { margin-left: auto; color: #1a3a5c; font-size: 16px; display: none; }
+.user-pick-item.selected .check-mark { display: block; }
+.modal-btns { display: flex; gap: 8px; }
+.modal-btns button {
+  flex: 1; padding: 10px; border-radius: 8px; font-size: 14px;
+  font-family: inherit; cursor: pointer; font-weight: 500;
+}
+.btn-cancel { background: #f5f5f5; border: none; color: #555; }
+.btn-confirm { background: #1a3a5c; border: none; color: #fff; }
+.btn-confirm:hover { background: #25527d; }
+
+/* 온라인 사용자 목록 탭 */
+.online-list { flex: 1; overflow-y: auto; }
+.online-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; cursor: pointer;
+}
+.online-item:hover { background: rgba(255,255,255,0.07); }
+.online-name { font-size: 13px; color: #fff; }
+.online-dept { font-size: 11px; color: rgba(255,255,255,0.5); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.status-dot.online { background: #22c55e; }
+.status-dot.offline { background: #888; }
+
+@media (max-width: 600px) {
+  .sidebar { width: 72px; min-width: 72px; }
+  .sidebar-header h1, .me-name, .me-dept, .logout-btn,
+  .room-info, .room-meta, .sidebar-search, .stab span,
+  .new-chat-btn { display: none; }
+  .room-item { justify-content: center; padding: 10px 0; }
+  .stab { padding: 10px 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo"><span>의</span></div>
+    <h2>의왕도시공사 메신저</h2>
+    <p>이름을 입력하고 접속하세요</p>
+    <input type="text" id="login-name" placeholder="이름 (예: 홍길동)" maxlength="10" />
+    <select id="login-dept">
+      <option value="">부서 선택</option>
+      <option>기획조정실</option>
+      <option>경영지원처</option>
+      <option>생활체육처</option>
+      <option>개발사업처</option>
+      <option>교통레저처</option>
+    </select>
+    <button class="login-btn" onclick="doLogin()">접속하기</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- 메인 앱 -->
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h1>💬 의왕 메신저</h1>
+      <div class="me-info">
+        <div class="me-avatar" id="me-avatar"></div>
+        <div>
+          <div class="me-name" id="me-name-disp"></div>
+          <div class="me-dept" id="me-dept-disp"></div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+      </div>
+    </div>
+    <div class="sidebar-tabs">
+      <div class="stab active" onclick="switchSTab('chats')" id="stab-chats"><span>채팅</span></div>
+      <div class="stab" onclick="switchSTab('online')" id="stab-online"><span>전체</span></div>
+    </div>
+    <div class="sidebar-search">
+      <input type="text" placeholder="검색..." id="room-search" oninput="filterRooms()" />
+    </div>
+    <div class="room-list" id="room-list"></div>
+    <div class="online-list" id="online-list" style="display:none;"></div>
+    <button class="new-chat-btn" onclick="openNewChat()">+ 새 채팅 / 단체방</button>
+  </div>
+
+  <div class="chat-area" id="chat-area">
+    <div class="empty-chat" id="empty-chat">
+      <div class="icon">💬</div>
+      <p>채팅방을 선택하거나 새 채팅을 시작하세요</p>
+    </div>
+    <div id="chat-main" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
+      <div class="chat-header">
+        <div class="chat-header-avatar" id="ch-avatar"></div>
+        <div>
+          <div class="chat-header-name" id="ch-name"></div>
+          <div class="chat-header-sub" id="ch-sub"></div>
+        </div>
+      </div>
+      <div class="messages-wrap" id="messages-wrap"></div>
+      <div class="chat-input-wrap">
+        <textarea class="chat-input" id="chat-input" placeholder="메시지 입력... (Enter: 전송, Shift+Enter: 줄바꿈)" rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" onclick="sendMessage()" id="send-btn">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 새 채팅 모달 -->
+<div class="modal-bg" id="modal-bg" onclick="closeModal(event)">
+  <div class="modal">
+    <h3>새 채팅 시작</h3>
+    <input type="text" id="modal-search" placeholder="이름으로 검색..." oninput="filterModalUsers()" />
+    <div class="user-pick-list" id="user-pick-list"></div>
+    <div style="font-size:12px; color:#888;">
+      선택된 인원: <span id="selected-count">0</span>명
+      &nbsp;|&nbsp; 2명 이상 선택 시 단체방 생성
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-confirm" onclick="startChat()">채팅 시작</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://qiwqcylerloqxdqupgbk.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpd3FjeWxlcmxvcXhkcXVwZ2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MTQxMzMsImV4cCI6MjA3NDk5MDEzM30.haR8oLJsgp_5r-EisNqxI8ASHrdh87hiAixfMt5TG6U';
+const H = { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+
+let ME = null;
+let allUsers = [];
+let rooms = [];
+let currentRoom = null;
+let realtimeSub = null;
+let selectedUsers = [];
+
+// ── API 헬퍼 ──
+async function api(path, method='GET', body=null) {
+  const headers = { ...H };
+  if (method === 'POST') headers['Prefer'] = 'return=representation';
+  if (method === 'PATCH') headers['Prefer'] = 'return=representation';
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, opts);
+  if (!r.ok) {
+    const e = await r.text();
+    console.error('API Error:', method, path, e);
+    throw new Error(e);
+  }
+  const t = await r.text();
+  return t ? JSON.parse(t) : null;
+}
+
+// ── 로그인 ──
+async function doLogin() {
+  const name = document.getElementById('login-name').value.trim();
+  const dept = document.getElementById('login-dept').value;
+  const err = document.getElementById('login-err');
+  if (!name) { showErr('이름을 입력해주세요.'); return; }
+  if (!dept) { showErr('부서를 선택해주세요.'); return; }
+  try {
+    let users = await api('users?name=eq.' + encodeURIComponent(name) + '&select=*');
+    if (users.length === 0) {
+      users = await api('users', 'POST', { name, department: dept });
+    } else {
+      await api('users?id=eq.' + users[0].id, 'PATCH', { last_seen: new Date().toISOString(), department: dept });
+    }
+    ME = Array.isArray(users) ? users[0] : users;
+    localStorage.setItem('uw_me', JSON.stringify(ME));
+    startApp();
+  } catch(e) { showErr('접속 실패: ' + e.message); }
+}
+function showErr(msg) {
+  const el = document.getElementById('login-err');
+  el.textContent = msg; el.style.display = 'block';
+}
+function doLogout() {
+  ME = null; localStorage.removeItem('uw_me');
+  if (realtimeSub) realtimeSub.close();
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// ── 앱 시작 ──
+async function startApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('me-avatar').textContent = ME.name.slice(0,2);
+  document.getElementById('me-name-disp').textContent = ME.name;
+  document.getElementById('me-dept-disp').textContent = ME.department || '';
+  await loadUsers();
+  await loadRooms();
+  subscribeRealtime();
+  updateLastSeen();
+  setInterval(updateLastSeen, 30000);
+  setInterval(loadUsers, 15000);
+}
+
+async function updateLastSeen() {
+  if (!ME) return;
+  await api('users?id=eq.' + ME.id, 'PATCH', { last_seen: new Date().toISOString() });
+}
+
+// ── 사용자 목록 ──
+async function loadUsers() {
+  allUsers = await api('users?select=*&order=name');
+  renderOnlineList();
+}
+
+function renderOnlineList() {
+  const now = new Date();
+  const el = document.getElementById('online-list');
+  el.innerHTML = allUsers.map(u => {
+    const diff = (now - new Date(u.last_seen)) / 1000;
+    const online = diff < 60;
+    const init = u.name.slice(0,2);
+    return `<div class="online-item" onclick="startDirectChat('${u.id}','${u.name}')">
+      <div class="pick-avatar">${init}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="online-name">${u.name}</div>
+        <div class="online-dept">${u.department||''}</div>
+      </div>
+      <div class="status-dot ${online?'online':'offline'}"></div>
+    </div>`;
+  }).join('');
+}
+
+// ── 채팅방 목록 ──
+async function loadRooms() {
+  const members = await api('room_members?user_id=eq.' + ME.id + '&select=room_id');
+  if (!members.length) { renderRooms([]); return; }
+  const ids = members.map(m => m.room_id);
+  const roomData = await api('rooms?id=in.(' + ids.join(',') + ')&select=*&order=created_at.desc');
+  const lastMsgs = await Promise.all(roomData.map(r =>
+    api('messages?room_id=eq.' + r.id + '&select=*&order=created_at.desc&limit=1')
+  ));
+  rooms = await Promise.all(roomData.map(async (r, i) => {
+    const allMembers = await api('room_members?room_id=eq.' + r.id + '&select=user_id');
+    const otherIds = allMembers.map(m=>m.user_id).filter(id=>id!==ME.id);
+    let displayName = r.name;
+    if (r.type === 'direct' && otherIds.length > 0) {
+      const other = allUsers.find(u=>u.id===otherIds[0]);
+      displayName = other ? other.name : '알 수 없음';
+    }
+    return { ...r, displayName, lastMsg: lastMsgs[i][0] || null, otherIds };
+  }));
+  renderRooms(rooms);
+}
+
+function renderRooms(list) {
+  const q = document.getElementById('room-search').value.toLowerCase();
+  const filtered = list.filter(r => r.displayName.toLowerCase().includes(q));
+  const el = document.getElementById('room-list');
+  if (!filtered.length) { el.innerHTML = '<div style="text-align:center;padding:24px;font-size:13px;color:rgba(255,255,255,0.4);">채팅방이 없습니다</div>'; return; }
+  el.innerHTML = filtered.map(r => {
+    const isGroup = r.type === 'group';
+    const init = r.displayName.slice(0,2);
+    const last = r.lastMsg ? truncate(r.lastMsg.content, 20) : '대화를 시작해보세요';
+    const time = r.lastMsg ? formatTime(r.lastMsg.created_at) : '';
+    const active = currentRoom && currentRoom.id === r.id ? 'active' : '';
+    return `<div class="room-item ${active}" onclick="openRoom('${r.id}')">
+      <div class="room-avatar ${isGroup?'group':''}">${isGroup?'👥':init}</div>
+      <div class="room-info">
+        <div class="room-name">${r.displayName}</div>
+        <div class="room-last">${last}</div>
+      </div>
+      <div class="room-meta">
+        <div class="room-time">${time}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterRooms() { renderRooms(rooms); }
+
+// ── 채팅방 열기 ──
+async function openRoom(roomId) {
+  currentRoom = rooms.find(r=>r.id===roomId);
+  if (!currentRoom) return;
+  document.querySelectorAll('.room-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('empty-chat').style.display = 'none';
+  const cm = document.getElementById('chat-main');
+  cm.style.display = 'flex';
+  cm.style.flexDirection = 'column';
+  cm.style.overflow = 'hidden';
+  cm.style.flex = '1';
+
+  const isGroup = currentRoom.type === 'group';
+  const av = document.getElementById('ch-avatar');
+  av.textContent = isGroup ? '👥' : currentRoom.displayName.slice(0,2);
+  av.className = 'chat-header-avatar' + (isGroup?' group':'');
+  document.getElementById('ch-name').textContent = currentRoom.displayName;
+
+  if (!isGroup && currentRoom.otherIds.length > 0) {
+    const other = allUsers.find(u=>u.id===currentRoom.otherIds[0]);
+    const diff = other ? (new Date() - new Date(other.last_seen))/1000 : 999;
+    document.getElementById('ch-sub').innerHTML = diff < 60
+      ? '<span class="online-dot"></span>온라인' : other ? other.department||'' : '';
+  } else {
+    document.getElementById('ch-sub').textContent = '단체 채팅방';
+  }
+  await loadMessages();
+}
+
+// ── 메시지 로드 ──
+async function loadMessages() {
+  if (!currentRoom) return;
+  const msgs = await api('messages?room_id=eq.' + currentRoom.id + '&select=*&order=created_at.asc&limit=100');
+  renderMessages(msgs);
+}
+
+function renderMessages(msgs) {
+  const wrap = document.getElementById('messages-wrap');
+  if (!msgs.length) { wrap.innerHTML = '<div style="text-align:center;padding:40px;color:#ccc;font-size:14px;">첫 메시지를 보내보세요!</div>'; return; }
+  let html = '';
+  let lastDate = '';
+  let lastUserId = '';
+  msgs.forEach((m, i) => {
+    const date = m.created_at.slice(0,10);
+    if (date !== lastDate) {
+      html += `<div class="msg-date-divider"><span>${formatDate(m.created_at)}</span></div>`;
+      lastDate = date; lastUserId = '';
+    }
+    const isMine = m.user_id === ME.id;
+    const sender = allUsers.find(u=>u.id===m.user_id);
+    const senderName = sender ? sender.name : '알 수 없음';
+    const showAvatar = !isMine && lastUserId !== m.user_id;
+    const showName = !isMine && showAvatar && currentRoom.type === 'group';
+    lastUserId = m.user_id;
+    const init = senderName.slice(0,2);
+    const time = formatTimeShort(m.created_at);
+    html += `<div class="msg-row ${isMine?'mine':''}">
+      <div class="msg-avatar ${showAvatar?'':'hidden'}">${showAvatar?init:''}</div>
+      <div class="msg-content">
+        ${showName?`<div class="msg-sender">${senderName}</div>`:''}
+        <div class="msg-bubble">${escHtml(m.content)}</div>
+      </div>
+      <div class="msg-time">${time}</div>
+    </div>`;
+  });
+  wrap.innerHTML = html;
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+// ── 메시지 전송 ──
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const content = input.value.trim();
+  if (!content || !currentRoom) return;
+  input.value = ''; autoResize(input);
+  try {
+    await api('messages', 'POST', { room_id: currentRoom.id, user_id: ME.id, content });
+    await loadMessages();
+    await loadRooms();
+  } catch(e) { console.error(e); }
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ── Realtime 구독 ──
+function subscribeRealtime() {
+  if (realtimeSub) realtimeSub.close();
+  const url = SUPABASE_URL.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_KEY + '&vsn=1.0.0';
+  const ws = new WebSocket(url);
+  realtimeSub = ws;
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ topic: 'realtime:public:messages', event: 'phx_join', payload: {}, ref: '1' }));
+  };
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (data.event === 'INSERT' && data.payload?.record) {
+      const msg = data.payload.record;
+      if (currentRoom && msg.room_id === currentRoom.id) loadMessages();
+      loadRooms();
+    }
+  };
+  ws.onclose = () => { setTimeout(subscribeRealtime, 3000); };
+}
+
+// ── 새 채팅 모달 ──
+function openNewChat() {
+  selectedUsers = [];
+  document.getElementById('modal-search').value = '';
+  renderModalUsers(allUsers.filter(u=>u.id!==ME.id));
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal-bg'))
+    document.getElementById('modal-bg').classList.remove('open');
+}
+function renderModalUsers(list) {
+  document.getElementById('user-pick-list').innerHTML = list.map(u => {
+    const sel = selectedUsers.includes(u.id);
+    return `<div class="user-pick-item ${sel?'selected':''}" onclick="toggleUser('${u.id}')">
+      <div class="pick-avatar">${u.name.slice(0,2)}</div>
+      <div><div class="pick-name">${u.name}</div><div class="pick-dept">${u.department||''}</div></div>
+      <div class="check-mark">✓</div>
+    </div>`;
+  }).join('');
+  document.getElementById('selected-count').textContent = selectedUsers.length;
+}
+function filterModalUsers() {
+  const q = document.getElementById('modal-search').value.toLowerCase();
+  const filtered = allUsers.filter(u=>u.id!==ME.id && u.name.includes(q));
+  renderModalUsers(filtered);
+}
+function toggleUser(id) {
+  const idx = selectedUsers.indexOf(id);
+  if (idx >= 0) selectedUsers.splice(idx, 1); else selectedUsers.push(id);
+  filterModalUsers();
+}
+
+async function startChat() {
+  if (!selectedUsers.length) return;
+  closeModal();
+  if (selectedUsers.length === 1) {
+    await startDirectChat(selectedUsers[0]);
+  } else {
+    await startGroupChat(selectedUsers);
+  }
+}
+
+async function startDirectChat(otherId, otherName) {
+  try {
+    const members = await api('room_members?user_id=eq.' + ME.id + '&select=room_id');
+    if (members && members.length) {
+      for (const m of members) {
+        const rm = await api('room_members?room_id=eq.' + m.room_id + '&select=user_id');
+        const ids = rm.map(x=>x.user_id);
+        if (ids.length === 2 && ids.includes(otherId) && ids.includes(ME.id)) {
+          await loadRooms();
+          await openRoom(m.room_id);
+          return;
+        }
+      }
+    }
+    const roomRes = await api('rooms', 'POST', { type: 'direct', name: null });
+    const r = Array.isArray(roomRes) ? roomRes[0] : roomRes;
+    if (!r || !r.id) throw new Error('채팅방 생성 실패');
+    await api('room_members', 'POST', { room_id: r.id, user_id: ME.id });
+    await api('room_members', 'POST', { room_id: r.id, user_id: otherId });
+    await loadRooms();
+    await openRoom(r.id);
+  } catch(e) {
+    alert('채팅 시작 오류: ' + e.message);
+    console.error(e);
+  }
+}
+
+async function startGroupChat(userIds) {
+  const name = prompt('단체 채팅방 이름을 입력하세요:');
+  if (!name) return;
+  try {
+    const roomRes = await api('rooms', 'POST', { type: 'group', name });
+    const r = Array.isArray(roomRes) ? roomRes[0] : roomRes;
+    if (!r || !r.id) throw new Error('채팅방 생성 실패');
+    await api('room_members', 'POST', { room_id: r.id, user_id: ME.id });
+    for (const uid of userIds) {
+      await api('room_members', 'POST', { room_id: r.id, user_id: uid });
+    }
+    await loadRooms();
+    await openRoom(r.id);
+  } catch(e) {
+    alert('단체방 생성 오류: ' + e.message);
+    console.error(e);
+  }
+}
+
+function switchSTab(t) {
+  document.getElementById('stab-chats').classList.toggle('active', t==='chats');
+  document.getElementById('stab-online').classList.toggle('active', t==='online');
+  document.getElementById('room-list').style.display = t==='chats'?'block':'none';
+  document.getElementById('online-list').style.display = t==='online'?'block':'none';
+  document.getElementById('room-search').placeholder = t==='chats'?'검색...':'이름 검색...';
+}
+
+// ── 유틸 ──
+function truncate(s, n) { return s.length > n ? s.slice(0,n)+'...' : s; }
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+function formatTime(iso) {
+  const d = new Date(iso); const now = new Date();
+  if (d.toDateString()===now.toDateString()) return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+  return (d.getMonth()+1)+'/'+ d.getDate();
+}
+function formatTimeShort(iso) {
+  const d = new Date(iso);
+  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+}
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';
+}
+
+// 자동 로그인
+const saved = localStorage.getItem('uw_me');
+if (saved) { ME = JSON.parse(saved); startApp(); }
+</script>
+</body>
+</html>
