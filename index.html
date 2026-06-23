@@ -414,8 +414,11 @@ function showErr(msg) {
 function doLogout() {
   ME = null; localStorage.removeItem('uw_me');
   if (realtimeSub) realtimeSub.close();
+  [window._t1, window._t2, window._t3, window._t4].forEach(t => clearInterval(t));
+  currentRoom = null; rooms = []; allUsers = [];
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
+  loadDepartments();
 }
 
 // ── 앱 시작 ──
@@ -430,10 +433,10 @@ async function startApp() {
   subscribeRealtime();
   updateLastSeen();
   autoDeleteOldMessages();
-  setInterval(updateLastSeen, 30000);
-  setInterval(loadUsers, 15000);
-  setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
-  setInterval(loadRooms, 5000);
+  window._t1 = setInterval(updateLastSeen, 30000);
+  window._t2 = setInterval(loadUsers, 15000);
+  window._t3 = setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
+  window._t4 = setInterval(loadRooms, 5000);
 }
 
 async function updateLastSeen() {
@@ -443,6 +446,7 @@ async function updateLastSeen() {
 
 // ── 사용자 목록 ──
 async function loadUsers() {
+  if (!ME) return;
   allUsers = await api('users?select=*&order=name');
   renderOnlineList();
 }
@@ -467,6 +471,7 @@ function renderOnlineList() {
 
 // ── 채팅방 목록 ──
 async function loadRooms() {
+  if (!ME || !ME.id) return;
   const members = await api('room_members?user_id=eq.' + ME.id + '&select=room_id');
   if (!members.length) { renderRooms([]); return; }
   const ids = members.map(m => m.room_id);
@@ -789,6 +794,7 @@ async function leaveRoom() {
 
 // ── 24시간 지난 메시지 자동 삭제 ──
 async function autoDeleteOldMessages() {
+  if (!ME) return;
   try {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     await api('messages?created_at=lt.' + cutoff, 'DELETE');
