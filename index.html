@@ -1116,14 +1116,39 @@ async function setMyStatus(value) {
 
 async function saveStatus() {
   const msg = document.getElementById('status-msg-input').value.trim();
-  ME.status = ME.status || 'online';
+  const status = ME.status || 'online';
+  ME.status = status;
   ME.status_msg = msg;
   localStorage.setItem('uw_me', JSON.stringify(ME));
   try {
-    await api('users?id=eq.' + ME.id, 'PATCH', { status: ME.status, status_msg: msg });
-  } catch(e) { console.error(e); }
+    // fetch 직접 호출 - status_msg 빈값도 확실히 저장
+    const res = await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + ME.id, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({ status: status, status_msg: msg })
+    });
+    const text = await res.text();
+    console.log('상태 저장:', res.status, text);
+    if (!res.ok) throw new Error(text);
+    // DB에서 최신값 다시 읽기
+    const fresh = await api('users?id=eq.' + ME.id + '&select=*');
+    if (fresh && fresh[0]) {
+      ME = { ...ME, ...fresh[0] };
+      localStorage.setItem('uw_me', JSON.stringify(ME));
+    }
+  } catch(e) {
+    console.error('상태 저장 실패:', e);
+    alert('저장 실패: ' + e.message);
+    return;
+  }
   updateMyStatusDisplay();
   closeStatusModal();
+  await loadUsers();
 }
 
 function updateMyStatusDisplay() {
