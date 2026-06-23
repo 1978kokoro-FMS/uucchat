@@ -439,7 +439,7 @@ async function startApp() {
   window._t1 = setInterval(updateLastSeen, 30000);
   window._t2 = setInterval(loadUsers, 15000);
   window._t3 = setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
-  window._t4 = setInterval(loadRooms, 5000);
+  window._t4 = setInterval(loadRooms, 2000);
 }
 
 async function updateLastSeen() {
@@ -737,27 +737,36 @@ function subscribeRealtime() {
   realtimeSub = ws;
   ws.onopen = () => {
     ws.send(JSON.stringify({ topic: 'realtime:public:messages', event: 'phx_join', payload: {}, ref: '1' }));
+    ws.send(JSON.stringify({ topic: 'realtime:public:room_members', event: 'phx_join', payload: {}, ref: '2' }));
   };
   ws.onmessage = (e) => {
     try {
       const data = JSON.parse(e.data);
-      if (data.event === 'INSERT' && data.payload?.record) {
-        const msg = data.payload.record;
-        if (msg.content !== undefined && msg.user_id !== ME.id) {
-          const sender = allUsers.find(u => u.id === msg.user_id);
-          const senderName = sender ? sender.name : '누군가';
-          playBeep();
-          showBrowserNotif(senderName, msg.content, msg.room_id);
-          addUnread(msg.room_id);
-          if (currentRoom && msg.room_id === currentRoom.id) loadMessages();
-          loadRooms();
-        } else if (msg.content !== undefined) {
-          if (currentRoom && msg.room_id === currentRoom.id) loadMessages();
-          loadRooms();
-        } else {
-          loadRooms();
-        }
+      if (data.event !== 'INSERT' && data.event !== 'DELETE') return;
+      const record = data.payload?.record;
+      if (!record) return;
+
+      // room_members 변경 → 내가 초대받은 경우 즉시 채팅방 목록 갱신
+      if (data.topic === 'realtime:public:room_members') {
+        if (record.user_id === ME.id) loadRooms();
+        return;
       }
+
+      // messages INSERT
+      if (record.content === undefined) return;
+      if (record.user_id === ME.id) {
+        if (currentRoom && record.room_id === currentRoom.id) loadMessages();
+        return;
+      }
+      // 상대방 메시지
+      playBeep();
+      showBrowserNotif(
+        (allUsers.find(u => u.id === record.user_id) || {name:'누군가'}).name,
+        record.content, record.room_id
+      );
+      addUnread(record.room_id);
+      if (currentRoom && record.room_id === currentRoom.id) loadMessages();
+      loadRooms();
     } catch(err) {}
   };
   ws.onclose = () => { setTimeout(subscribeRealtime, 3000); };
