@@ -1053,13 +1053,13 @@ function getAutoStatus(lastSeen) {
 
 function getEffectiveStatus(user) {
   const diff = (Date.now() - new Date(user.last_seen).getTime()) / 1000;
-  // 수동 설정 상태는 last_seen과 무관하게 유지
-  // 단, 5분(300초) 이상 last_seen 없으면 오프라인으로 판단
+  // 부재중 → last_seen 무관하게 유지
   if (user.status === 'busy') return 'busy';
-  if (user.status === 'chat' && diff < 300) return 'chat';
-  // 45초 이상 갱신 없으면 오프라인
+  // 채팅가능 → 30분(1800초) 이상 미활동 시에만 오프라인
+  if (user.status === 'chat') return diff > 1800 ? 'offline' : 'chat';
+  // 나머지 → 45초 이상 갱신 없으면 오프라인
   if (diff > 45) return 'offline';
-  return user.status || 'chat';
+  return 'chat';
 }
 
 function getStatusInfo(statusValue) {
@@ -1115,12 +1115,10 @@ async function setMyStatus(value) {
 
 async function saveStatus() {
   const msg = document.getElementById('status-msg-input').value.trim();
-  const status = ME.status || 'online';
-  ME.status = status;
-  ME.status_msg = msg;
-  localStorage.setItem('uw_me', JSON.stringify(ME));
+  // window._selectedStatus: 모달에서 선택한 값 우선 사용
+  const status = window._selectedStatus || ME.status || 'chat';
+  console.log('저장할 상태:', status, '/ 메시지:', msg);
   try {
-    // fetch 직접 호출 - status_msg 빈값도 확실히 저장
     const res = await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + ME.id, {
       method: 'PATCH',
       headers: {
@@ -1134,12 +1132,11 @@ async function saveStatus() {
     const text = await res.text();
     console.log('상태 저장:', res.status, text);
     if (!res.ok) throw new Error(text);
-    // DB에서 최신값 다시 읽기
-    const fresh = await api('users?id=eq.' + ME.id + '&select=*');
-    if (fresh && fresh[0]) {
-      ME = { ...ME, ...fresh[0] };
-      localStorage.setItem('uw_me', JSON.stringify(ME));
-    }
+    // ME 즉시 업데이트
+    ME.status = status;
+    ME.status_msg = msg;
+    ME.last_seen = new Date().toISOString();
+    localStorage.setItem('uw_me', JSON.stringify(ME));
   } catch(e) {
     console.error('상태 저장 실패:', e);
     alert('저장 실패: ' + e.message);
