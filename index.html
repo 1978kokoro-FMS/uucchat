@@ -682,12 +682,64 @@ async function updateChatHeaderStatus() {
 async function loadMessages() {
   if (!currentRoom) return;
   const msgs = await api('messages?room_id=eq.' + currentRoom.id + '&select=*&order=created_at.asc&limit=100');
-  renderMessages(msgs);
+
+  // 읽음 처리 - 현재 방의 모든 메시지를 읽음으로 표시
+  if (msgs.length > 0) {
+    markMessagesAsRead(msgs);
+  }
+
+  // 읽음 데이터 가져오기
+  const msgIds = msgs.map(m => m.id);
+  let reads = [];
+  if (msgIds.length > 0) {
+    try {
+      reads = await api('message_reads?message_id=in.(' + msgIds.join(',') + ')&select=*');
+    } catch(e) {}
+  }
+
+  // 채팅방 멤버 수 가져오기 (단체방용)
+  let memberCount = 2;
+  if (currentRoom.type === 'group') {
+    try {
+      const members = await api('room_members?room_id=eq.' + currentRoom.id + '&select=user_id');
+      memberCount = members.length;
+    } catch(e) {}
+  }
+
+  renderMessages(msgs, reads, memberCount);
 }
 
-function renderMessages(msgs) {
+async function markMessagesAsRead(msgs) {
+  if (!ME) return;
+  // 내가 안 읽은 메시지만 읽음 처리
+  const unreadMsgs = msgs.filter(m => m.user_id !== ME.id);
+  for (const m of unreadMsgs) {
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/message_reads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Prefer': 'return=minimal,resolution=ignore-duplicates'
+        },
+        body: JSON.stringify({ message_id: m.id, user_id: ME.id })
+      });
+    } catch(e) {}
+  }
+}
+
+function renderMessages(msgs, reads=[], memberCount=2) {
   const wrap = document.getElementById('messages-wrap');
   if (!msgs.length) { wrap.innerHTML = '<div style="text-align:center;padding:40px;color:#ccc;font-size:14px;">첫 메시지를 보내보세요!</div>'; return; }
+
+  // reads를 message_id 기준으로 그룹화
+  const readMap = {};
+  reads.forEach(r => {
+    if (!readMap[r.message_id]) readMap[r.message_id] = new Set();
+    readMap[r.message_id].add(r.user_id);
+  });
+
   let html = '';
   let lastDate = '';
   let lastUserId = '';
@@ -705,13 +757,33 @@ function renderMessages(msgs) {
     lastUserId = m.user_id;
     const init = senderName.slice(0,2);
     const time = formatTimeShort(m.created_at);
+
+    // 읽음 표시 계산 (내가 보낸 메시지만)
+    let readBadge = '';
+    if (isMine) {
+      const readUsers = readMap[m.id] || new Set();
+      // 나 자신 제외한 멤버 수
+      const otherCount = memberCount - 1;
+      // 읽은 사람 수 (나 제외)
+      const readCount = [...readUsers].filter(uid => uid !== ME.id).length;
+      const unreadCount = otherCount - readCount;
+      if (unreadCount > 0) {
+        // 안 읽은 사람 있으면 숫자 표시
+        readBadge = `<div style="font-size:11px;color:#f5a623;font-weight:600;text-align:right;margin-bottom:2px;">${unreadCount}</div>`;
+      }
+      // unreadCount === 0이면 아무것도 표시 안 함 (카톡처럼)
+    }
+
     html += `<div class="msg-row ${isMine?'mine':''}">
       <div class="msg-avatar ${showAvatar?'':'hidden'}">${showAvatar?init:''}</div>
       <div class="msg-content">
         ${showName?`<div class="msg-sender">${senderName}</div>`:''}
         <div class="msg-bubble">${escHtml(m.content)}</div>
       </div>
-      <div class="msg-time">${time}</div>
+      <div style="display:flex;flex-direction:column;justify-content:flex-end;margin:0 4px 2px;">
+        ${readBadge}
+        <div class="msg-time">${time}</div>
+      </div>
     </div>`;
   });
   wrap.innerHTML = html;
