@@ -1052,10 +1052,12 @@ function getAutoStatus(lastSeen) {
 }
 
 function getEffectiveStatus(user) {
-  // 접속 안 했으면 오프라인 (last_seen 기준 자동)
   const diff = (Date.now() - new Date(user.last_seen).getTime()) / 1000;
+  // 부재중은 오프라인으로 안 바뀜 (본인이 직접 바꿔야 함)
+  if (user.status === 'busy') return 'busy';
+  // 접속 안 했으면 오프라인
   if (diff > 45) return 'offline';
-  // 접속 중이면 수동 설정값 그대로 (chat 또는 busy)
+  // 접속 중이면 수동 설정값
   return user.status || 'chat';
 }
 
@@ -1126,7 +1128,7 @@ async function saveStatus() {
         'Authorization': 'Bearer ' + SUPABASE_KEY,
         'Prefer': 'return=representation'
       },
-      body: JSON.stringify({ status: status, status_msg: msg })
+      body: JSON.stringify({ status: status, status_msg: msg, last_seen: new Date().toISOString() })
     });
     const text = await res.text();
     console.log('상태 저장:', res.status, text);
