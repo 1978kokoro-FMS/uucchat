@@ -729,34 +729,39 @@ async function updateChatHeaderStatus() {
 let _loadingMessages = false;
 async function loadMessages() {
   if (!currentRoom) return;
-  if (_loadingMessages) return;  // 중복 실행 방지
+  if (_loadingMessages) return;
   _loadingMessages = true;
   try {
-  const msgs = await api('messages?room_id=eq.' + currentRoom.id + '&select=*&order=created_at.asc&limit=100');
-  if (!msgs.length) { renderMessages([], [], 2); _loadingMessages = false; return; }
+    const msgs = await api('messages?room_id=eq.' + currentRoom.id + '&select=*&order=created_at.asc&limit=100');
+    if (!msgs.length) { renderMessages([], [], 2); return; }
 
-  // 내가 안 보낸 메시지 읽음 처리 (비동기, 결과 안 기다림)
-  markMessagesAsRead(msgs);
+    // 내가 안 보낸 메시지 읽음 처리
+    markMessagesAsRead(msgs);
 
-  // 내가 보낸 메시지 ID만 추출
-  const myMsgIds = msgs.filter(m => m.user_id === ME.id).map(m => m.id);
-  let reads = [];
-  if (myMsgIds.length > 0) {
-    try {
-      reads = await api('message_reads?message_id=in.(' + myMsgIds.join(',') + ')&select=message_id,user_id');
-    } catch(e) {}
+    // 내가 보낸 메시지 ID만 추출
+    const myMsgIds = msgs.filter(m => m.user_id === ME.id).map(m => m.id);
+    let reads = [];
+    if (myMsgIds.length > 0) {
+      try {
+        reads = await api('message_reads?message_id=in.(' + myMsgIds.join(',') + ')&select=message_id,user_id');
+      } catch(e) {}
+    }
+
+    // 멤버 수 - 1:1은 항상 2, 단체방만 실제 멤버 수 조회
+    let memberCount = 2;
+    if (currentRoom.type === 'group') {
+      try {
+        const members = await api('room_members?room_id=eq.' + currentRoom.id + '&select=user_id');
+        memberCount = members.length;
+      } catch(e) {}
+    }
+
+    renderMessages(msgs, reads, memberCount);
+  } catch(e) {
+    console.error('loadMessages 오류:', e);
+  } finally {
+    _loadingMessages = false;
   }
-
-  // 멤버 수 - 1:1은 항상 2, 단체방만 실제 멤버 수 조회
-  let memberCount = 2;
-  if (currentRoom.type === 'group') {
-    try {
-      const members = await api('room_members?room_id=eq.' + currentRoom.id + '&select=user_id');
-      memberCount = members.length;
-    } catch(e) {}
-  }
-
-  renderMessages(msgs, reads, memberCount);
 }
 
 async function markMessagesAsRead(msgs) {
