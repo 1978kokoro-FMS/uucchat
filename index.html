@@ -1155,17 +1155,26 @@ async function leaveRoom() {
   try {
     const roomId = currentRoom.id;
     if (isDirect) {
-      // 1:1 채팅 → 메시지 전체 삭제 후 방 삭제
+      // 1:1 채팅 → message_reads 먼저 삭제 → 메시지 삭제 → 멤버 삭제 → 방 삭제
+      // (CASCADE 설정 안 된 경우를 위해 순서대로 삭제)
+      const msgIds = await api('messages?room_id=eq.' + roomId + '&select=id');
+      if (msgIds.length > 0) {
+        const ids = msgIds.map(m => m.id).join(',');
+        await api('message_reads?message_id=in.(' + ids + ')', 'DELETE');
+      }
       await api('messages?room_id=eq.' + roomId, 'DELETE');
       await api('room_members?room_id=eq.' + roomId, 'DELETE');
       await api('rooms?id=eq.' + roomId, 'DELETE');
     } else {
       // 단체방 → 나만 멤버에서 제거
       await api('room_members?room_id=eq.' + roomId + '&user_id=eq.' + ME.id, 'DELETE');
-      // 남은 멤버 확인
       const remaining = await api('room_members?room_id=eq.' + roomId + '&select=user_id');
       if (!remaining || remaining.length === 0) {
-        // 마지막 멤버였으면 메시지 + 방 완전 삭제
+        const msgIds = await api('messages?room_id=eq.' + roomId + '&select=id');
+        if (msgIds.length > 0) {
+          const ids = msgIds.map(m => m.id).join(',');
+          await api('message_reads?message_id=in.(' + ids + ')', 'DELETE');
+        }
         await api('messages?room_id=eq.' + roomId, 'DELETE');
         await api('rooms?id=eq.' + roomId, 'DELETE');
       }
