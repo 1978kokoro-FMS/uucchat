@@ -271,13 +271,10 @@ body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f
     <div class="sidebar-header">
       <h1>💬 의왕 메신저</h1>
       <div class="me-info">
-        <div style="position:relative;cursor:pointer;" onclick="openStatusPicker()">
-          <div class="me-avatar" id="me-avatar"></div>
-          <span id="my-status-dot" style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#22c55e;border:2px solid #1a3a5c;"></span>
-        </div>
-        <div style="flex:1;min-width:0;cursor:pointer;" onclick="openStatusPicker()">
+        <div class="me-avatar" id="me-avatar"></div>
+        <div>
           <div class="me-name" id="me-name-disp"></div>
-          <div id="my-status-label" style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:1px;">온라인</div>
+          <div class="me-dept" id="me-dept-disp"></div>
         </div>
         <button class="logout-btn" id="notif-btn" onclick="toggleNotification()" title="알림 설정">🔔</button>
         <button class="logout-btn" onclick="doLogout()">로그아웃</button>
@@ -339,12 +336,6 @@ body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f
       <button class="btn-cancel" onclick="closeModal()">취소</button>
       <button class="btn-confirm" onclick="startChat()">채팅 시작</button>
     </div>
-  </div>
-</div>
-
-<!-- 상태 설정 모달 -->
-<div id="status-modal-bg" onclick="closeStatusModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:200;">
-  <div id="status-modal-content" onclick="event.stopPropagation()" style="background:#fff;border-radius:14px;padding:20px;width:300px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
   </div>
 </div>
 
@@ -414,13 +405,6 @@ async function doLogin() {
       await api('users?id=eq.' + users[0].id, 'PATCH', { last_seen: new Date().toISOString(), department: dept });
     }
     ME = Array.isArray(users) ? users[0] : users;
-    // 로그인 즉시 online + last_seen 갱신
-    await api('users?id=eq.' + ME.id, 'PATCH', {
-      last_seen: new Date().toISOString(),
-      status: 'chat'
-    });
-    ME.status = 'chat';
-    ME.last_seen = new Date().toISOString();
     localStorage.setItem('uw_me', JSON.stringify(ME));
     startApp();
   } catch(e) { showErr('접속 실패: ' + e.message); }
@@ -432,7 +416,7 @@ function showErr(msg) {
 function doLogout() {
   ME = null; localStorage.removeItem('uw_me');
   if (realtimeSub) realtimeSub.close();
-  [window._t1, window._t2, window._t3, window._t4, window._t5].forEach(t => clearInterval(t));
+  [window._t1, window._t2, window._t3, window._t4].forEach(t => clearInterval(t));
   currentRoom = null; rooms = []; allUsers = [];
   lastSeenMsgIds = {}; unreadCounts = {}; appStartTime = null;
   document.getElementById('login-screen').style.display = 'flex';
@@ -446,86 +430,48 @@ async function startApp() {
   document.getElementById('app').style.display = 'flex';
   document.getElementById('me-avatar').textContent = ME.name.slice(0,2);
   document.getElementById('me-name-disp').textContent = ME.name;
-  ME.status = ME.status || 'chat';
-  updateMyStatusDisplay();
+  document.getElementById('me-dept-disp').textContent = ME.department || '';
   appStartTime = Date.now();
   await loadUsers();
   await loadRooms();
   subscribeRealtime();
-  await updateLastSeen();
+  updateLastSeen();
   autoDeleteOldMessages();
   requestNotifPermission();
-  window._t1 = setInterval(updateLastSeen, 10000);
-  window._t2 = setInterval(loadUsers, 5000);
-  window._t5 = setInterval(updateChatHeaderStatus, 5000);
+  window._t1 = setInterval(updateLastSeen, 30000);
+  window._t2 = setInterval(loadUsers, 15000);
   window._t3 = setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
   window._t4 = setInterval(loadRooms, 2000);
 }
 
-let lastActivity = Date.now();
-document.addEventListener('mousemove', () => lastActivity = Date.now());
-document.addEventListener('keydown', () => lastActivity = Date.now());
-
 async function updateLastSeen() {
-  if (!ME || !ME.id) return;
-  try {
-    const now = new Date().toISOString();
-    const res = await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + ME.id, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ last_seen: now })
-    });
-    if (res.ok) {
-      ME.last_seen = now;
-    } else {
-      const err = await res.text();
-      console.error('last_seen 업데이트 실패:', res.status, err);
-    }
-  } catch(e) {
-    console.error('last_seen 네트워크 오류:', e);
-  }
+  if (!ME) return;
+  await api('users?id=eq.' + ME.id, 'PATCH', { last_seen: new Date().toISOString() });
 }
 
 // ── 사용자 목록 ──
 async function loadUsers() {
   if (!ME) return;
-  allUsers = await api('users?select=id,name,department,last_seen,status,status_msg&order=name');
+  allUsers = await api('users?select=*&order=name');
   renderOnlineList();
-  // 채팅 헤더 상태도 즉시 갱신
-  updateChatHeaderStatus();
 }
 
 function renderOnlineList() {
+  const now = new Date();
   const el = document.getElementById('online-list');
-  // 온라인 먼저, 오프라인 나중 정렬
-  const sorted = [...allUsers]
-    .filter(u => u.id !== ME.id)
-    .sort((a, b) => {
-      const sa = getEffectiveStatus(a);
-      const sb = getEffectiveStatus(b);
-      const order = ['online','chat','away','busy','dnd','offline'];
-      return order.indexOf(sa) - order.indexOf(sb);
-    });
-
-  el.innerHTML = sorted.map(u => {
-    const st = getStatusInfo(getEffectiveStatus(u));
-    const statusMsg = u.status_msg ? u.status_msg : st.label;
+  el.innerHTML = allUsers.map(u => {
+    const diff = (now - new Date(u.last_seen)) / 1000;
+    const online = diff < 60;
+    const init = u.name.slice(0,2);
     return `<div class="online-item" onclick="startDirectChat('${u.id}','${u.name}')">
-      <div style="position:relative;flex-shrink:0;">
-        <div class="pick-avatar" style="background:rgba(255,255,255,0.18);color:#fff;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;">${u.name.slice(0,2)}</div>
-        <span style="position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:${st.color};border:2px solid #1a3a5c;"></span>
-      </div>
+      <div class="pick-avatar">${init}</div>
       <div style="flex:1;min-width:0;">
-        <div class="online-name">${u.name} <span style="font-size:11px;opacity:0.6;">${u.department||''}</span></div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${statusMsg}</div>
+        <div class="online-name">${u.name}</div>
+        <div class="online-dept">${u.department||''}</div>
       </div>
+      <div class="status-dot ${online?'online':'offline'}"></div>
     </div>`;
-  }).join('') || '<div style="text-align:center;padding:24px;font-size:13px;color:rgba(255,255,255,0.4);">접속 중인 직원이 없습니다</div>';
+  }).join('');
 }
 
 // ── 채팅방 목록 ──
@@ -635,7 +581,10 @@ async function openRoom(roomId) {
   document.getElementById('ch-name').textContent = currentRoom.displayName;
 
   if (!isGroup && currentRoom.otherIds.length > 0) {
-    updateChatHeaderStatus();
+    const other = allUsers.find(u=>u.id===currentRoom.otherIds[0]);
+    const diff = other ? (new Date() - new Date(other.last_seen))/1000 : 999;
+    document.getElementById('ch-sub').innerHTML = diff < 60
+      ? '<span class="online-dot"></span>온라인' : other ? other.department||'' : '';
   } else {
     document.getElementById('ch-sub').textContent = '단체 채팅방';
   }
@@ -643,24 +592,6 @@ async function openRoom(roomId) {
 }
 
 // ── 메시지 로드 ──
-async function updateChatHeaderStatus() {
-  if (!currentRoom || currentRoom.type === 'group') return;
-  if (!currentRoom.otherIds || !currentRoom.otherIds.length) return;
-  try {
-    const freshUsers = await api('users?id=eq.' + currentRoom.otherIds[0] + '&select=*');
-    const other = freshUsers && freshUsers[0] ? freshUsers[0] : allUsers.find(u=>u.id===currentRoom.otherIds[0]);
-    if (other) {
-      const idx = allUsers.findIndex(u=>u.id===other.id);
-      if (idx >= 0) allUsers[idx] = other;
-      const st = getStatusInfo(getEffectiveStatus(other));
-      const msg = other.status_msg ? ` · ${other.status_msg}` : '';
-      const sub = document.getElementById('ch-sub');
-      if (sub) sub.innerHTML =
-        `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${st.color};margin-right:4px;"></span>${st.label}${msg}`;
-    }
-  } catch(e) {}
-}
-
 async function loadMessages() {
   if (!currentRoom) return;
   const msgs = await api('messages?room_id=eq.' + currentRoom.id + '&select=*&order=created_at.asc&limit=100');
@@ -710,17 +641,7 @@ async function sendMessage() {
     await api('messages', 'POST', { room_id: currentRoom.id, user_id: ME.id, content });
     await loadMessages();
     await loadRooms();
-  } catch(e) {
-    console.error(e);
-    // 409(채팅방 없음) 에러면 채팅방 목록 새로고침
-    if (e.message && e.message.includes('23503')) {
-      currentRoom = null;
-      document.getElementById('chat-main').style.display = 'none';
-      document.getElementById('empty-chat').style.display = 'flex';
-      await loadRooms();
-      alert('채팅방이 종료되었습니다. 새 채팅을 시작해주세요.');
-    }
-  }
+  } catch(e) { console.error(e); }
 }
 
 function handleKey(e) {
@@ -979,37 +900,23 @@ function switchSTab(t) {
   document.getElementById('room-list').style.display = t==='chats'?'block':'none';
   document.getElementById('online-list').style.display = t==='online'?'block':'none';
   document.getElementById('room-search').placeholder = t==='chats'?'검색...':'이름 검색...';
-  // 전체 탭 열 때 즉시 최신 데이터 로드
-  if (t === 'online') loadUsers();
 }
 
 // ── 유틸 ──
 function truncate(s, n) { return s.length > n ? s.slice(0,n)+'...' : s; }
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
-// 한국 시간(KST = UTC+9) 변환
-function toKST(iso) {
-  const d = new Date(iso);
-  return new Date(d.getTime() + 9 * 60 * 60 * 1000);
-}
 function formatTime(iso) {
-  const d = toKST(iso);
-  const now = toKST(new Date().toISOString());
-  if (d.toDateString() === now.toDateString())
-    return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
-  return (d.getMonth()+1) + '/' + d.getDate();
+  const d = new Date(iso); const now = new Date();
+  if (d.toDateString()===now.toDateString()) return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+  return (d.getMonth()+1)+'/'+ d.getDate();
 }
 function formatTimeShort(iso) {
-  const d = toKST(iso);
-  const h = d.getHours();
-  const m = d.getMinutes().toString().padStart(2,'0');
-  const ampm = h < 12 ? '오전' : '오후';
-  const h12 = h % 12 || 12;
-  return `${ampm} ${h12}:${m}`;
+  const d = new Date(iso);
+  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
 }
 function formatDate(iso) {
-  const d = toKST(iso);
-  const days = ['일','월','화','수','목','금','토'];
-  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+  const d = new Date(iso);
+  return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';
 }
 
 
@@ -1058,137 +965,6 @@ async function autoDeleteOldMessages() {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     await api('messages?created_at=lt.' + cutoff, 'DELETE');
   } catch(e) { console.error('자동삭제 오류:', e); }
-}
-
-// ── 상태 관련 ──
-const STATUS_OPTIONS = [
-  { value: 'chat',    label: '채팅가능', color: '#22c55e', emoji: '🟢' },
-  { value: 'busy',    label: '부재중',   color: '#ef4444', emoji: '🔴' },
-];
-const STATUS_ALL = [
-  { value: 'chat',    label: '채팅가능', color: '#22c55e', emoji: '🟢' },
-  { value: 'busy',    label: '부재중',   color: '#ef4444', emoji: '🔴' },
-  { value: 'offline', label: '오프라인', color: '#6b7280', emoji: '⬛' },
-];
-
-function getAutoStatus(lastSeen) {
-  const diff = (Date.now() - new Date(lastSeen).getTime()) / 1000;
-  if (diff < 60)  return 'online';
-  if (diff < 300) return 'away';
-  return 'offline';
-}
-
-function getEffectiveStatus(user) {
-  if (!user) return 'offline';
-
-  // 부재중 → 무조건 부재중
-  if (user.status === 'busy') return 'busy';
-
-  // last_seen 없으면 오프라인
-  if (!user.last_seen) return 'offline';
-
-  // last_seen이 UTC임을 명시 (Z 없으면 붙여줌)
-  const lastSeenStr = user.last_seen.endsWith('Z') ? user.last_seen : user.last_seen + 'Z';
-  const diff = (Date.now() - new Date(lastSeenStr).getTime()) / 1000;
-
-  // 5분(300초) 이상 갱신 없으면 오프라인
-  if (diff > 300) return 'offline';
-
-  // 그 외 → 채팅가능 (status 값 무관)
-  return 'chat';
-}
-
-function getStatusInfo(statusValue) {
-  return STATUS_ALL.find(s => s.value === statusValue) || STATUS_ALL[0];
-}
-
-function statusDot(user, size=8) {
-  const s = getStatusInfo(getEffectiveStatus(user));
-  return `<span style="display:inline-block;width:${size}px;height:${size}px;border-radius:50%;background:${s.color};flex-shrink:0;"></span>`;
-}
-
-// 상태 변경 팝업
-function openStatusPicker() {
-  const cur = getEffectiveStatus(ME);
-  const opts = STATUS_OPTIONS.map(s => `
-    <div onclick="setMyStatus('${s.value}')" style="
-      display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;
-      border-radius:8px;background:${s.value===cur?'#e8eef8':'transparent'};
-      transition:background 0.1s;
-    " onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='${s.value===cur?'#e8eef8':'transparent'}'">
-      <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0;"></span>
-      <span style="font-size:14px;font-weight:${s.value===cur?'600':'400'}">${s.label}</span>
-    </div>`).join('');
-
-  const curMsg = ME.status_msg || '';
-  document.getElementById('status-modal-content').innerHTML = `
-    <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;">상태 설정</h3>
-    <div style="margin-bottom:12px;">${opts}</div>
-    <input type="text" id="status-msg-input" value="${curMsg}" maxlength="30"
-      placeholder="상태 메시지 입력 (예: 오늘 외근입니다)"
-      style="width:100%;padding:9px 12px;border:1.5px solid #e0e4ef;border-radius:8px;font-size:13px;font-family:inherit;outline:none;"
-    />
-    <div style="display:flex;gap:8px;margin-top:10px;">
-      <button onclick="closeStatusModal()" style="flex:1;padding:9px;border-radius:8px;border:none;background:#f5f5f5;font-family:inherit;cursor:pointer;">취소</button>
-      <button onclick="saveStatus()" style="flex:1;padding:9px;border-radius:8px;border:none;background:#1a3a5c;color:#fff;font-family:inherit;cursor:pointer;font-weight:500;">저장</button>
-    </div>`;
-  document.getElementById('status-modal-bg').style.display = 'flex';
-}
-
-function closeStatusModal() {
-  document.getElementById('status-modal-bg').style.display = 'none';
-}
-
-async function setMyStatus(value) {
-  ME.status = value;
-  // 선택 즉시 UI 반영
-  document.querySelectorAll('#status-modal-content > div:nth-child(2) > div').forEach((el, i) => {
-    el.style.background = STATUS_OPTIONS[i].value === value ? '#e8eef8' : 'transparent';
-    el.querySelector('span:last-child').style.fontWeight = STATUS_OPTIONS[i].value === value ? '600' : '400';
-  });
-  updateMyStatusDisplay();
-}
-
-async function saveStatus() {
-  const msg = document.getElementById('status-msg-input').value.trim();
-  // window._selectedStatus: 모달에서 선택한 값 우선 사용
-  const status = window._selectedStatus || ME.status || 'chat';
-  console.log('저장할 상태:', status, '/ 메시지:', msg);
-  try {
-    const res = await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + ME.id, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
-        'Prefer': 'return=representation'
-      },
-      body: JSON.stringify({ status: status, status_msg: msg, last_seen: new Date().toISOString() })
-    });
-    const text = await res.text();
-    console.log('상태 저장:', res.status, text);
-    if (!res.ok) throw new Error(text);
-    // ME 즉시 업데이트
-    ME.status = status;
-    ME.status_msg = msg;
-    ME.last_seen = new Date().toISOString();
-    localStorage.setItem('uw_me', JSON.stringify(ME));
-  } catch(e) {
-    console.error('상태 저장 실패:', e);
-    alert('저장 실패: ' + e.message);
-    return;
-  }
-  updateMyStatusDisplay();
-  closeStatusModal();
-  await loadUsers();
-}
-
-function updateMyStatusDisplay() {
-  const s = getStatusInfo(getEffectiveStatus(ME));
-  const dot = document.getElementById('my-status-dot');
-  const label = document.getElementById('my-status-label');
-  if (dot) { dot.style.background = s.color; }
-  if (label) { label.textContent = ME.status_msg ? ME.status_msg : s.label; }
 }
 
 // ── 알림 테스트 ──
@@ -1241,18 +1017,8 @@ async function testNotif() {
 
 // 자동 로그인
 const saved = localStorage.getItem('uw_me');
-if (saved) {
-  ME = JSON.parse(saved);
-  // 자동 로그인 시에도 즉시 online으로
-  api('users?id=eq.' + ME.id, 'PATCH', {
-    last_seen: new Date().toISOString(),
-    status: ME.status || 'chat'
-  }).then(() => {
-    ME.status = ME.status || 'chat';
-    ME.last_seen = new Date().toISOString();
-  });
-  startApp();
-} else { loadDepartments(); }
+if (saved) { ME = JSON.parse(saved); startApp(); }
+else { loadDepartments(); }
 </script>
 </body>
 </html>
