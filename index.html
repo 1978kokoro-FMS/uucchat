@@ -1041,6 +1041,10 @@ async function autoDeleteOldMessages() {
 const STATUS_OPTIONS = [
   { value: 'chat',    label: '채팅가능', color: '#22c55e', emoji: '🟢' },
   { value: 'busy',    label: '부재중',   color: '#ef4444', emoji: '🔴' },
+];
+const STATUS_ALL = [
+  { value: 'chat',    label: '채팅가능', color: '#22c55e', emoji: '🟢' },
+  { value: 'busy',    label: '부재중',   color: '#ef4444', emoji: '🔴' },
   { value: 'offline', label: '오프라인', color: '#6b7280', emoji: '⬛' },
 ];
 
@@ -1063,7 +1067,7 @@ function getEffectiveStatus(user) {
 }
 
 function getStatusInfo(statusValue) {
-  return STATUS_OPTIONS.find(s => s.value === statusValue) || STATUS_OPTIONS[0];
+  return STATUS_ALL.find(s => s.value === statusValue) || STATUS_ALL[0];
 }
 
 function statusDot(user, size=8) {
