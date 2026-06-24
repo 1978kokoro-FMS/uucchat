@@ -1053,11 +1053,12 @@ function getAutoStatus(lastSeen) {
 
 function getEffectiveStatus(user) {
   const diff = (Date.now() - new Date(user.last_seen).getTime()) / 1000;
-  // 부재중은 오프라인으로 안 바뀜 (본인이 직접 바꿔야 함)
+  // 수동 설정 상태는 last_seen과 무관하게 유지
+  // 단, 5분(300초) 이상 last_seen 없으면 오프라인으로 판단
   if (user.status === 'busy') return 'busy';
-  // 접속 안 했으면 오프라인
+  if (user.status === 'chat' && diff < 300) return 'chat';
+  // 45초 이상 갱신 없으면 오프라인
   if (diff > 45) return 'offline';
-  // 접속 중이면 수동 설정값
   return user.status || 'chat';
 }
 
