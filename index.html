@@ -469,18 +469,25 @@ document.addEventListener('keydown', () => lastActivity = Date.now());
 async function updateLastSeen() {
   if (!ME || !ME.id) return;
   try {
-    // last_seen만 업데이트 - status는 절대 건드리지 않음
-    await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + ME.id, {
+    const now = new Date().toISOString();
+    const res = await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + ME.id, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Prefer': 'return=minimal'
       },
-      body: JSON.stringify({ last_seen: new Date().toISOString() })
+      body: JSON.stringify({ last_seen: now })
     });
+    if (res.ok) {
+      ME.last_seen = now;
+    } else {
+      const err = await res.text();
+      console.error('last_seen 업데이트 실패:', res.status, err);
+    }
   } catch(e) {
-    console.error('last_seen 업데이트 실패:', e);
+    console.error('last_seen 네트워크 오류:', e);
   }
 }
 
