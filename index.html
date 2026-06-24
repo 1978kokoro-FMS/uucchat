@@ -1050,6 +1050,7 @@ function subscribeRealtime() {
       );
       if (currentRoom && record.room_id === currentRoom.id) loadMessages();
       loadRooms();
+      refreshUnreadCounts();
     } catch(err) {}
   };
   ws.onclose = () => { setTimeout(subscribeRealtime, 3000); };
