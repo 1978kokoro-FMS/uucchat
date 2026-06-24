@@ -701,7 +701,17 @@ async function sendMessage() {
     await api('messages', 'POST', { room_id: currentRoom.id, user_id: ME.id, content });
     await loadMessages();
     await loadRooms();
-  } catch(e) { console.error(e); }
+  } catch(e) {
+    console.error(e);
+    // 409(채팅방 없음) 에러면 채팅방 목록 새로고침
+    if (e.message && e.message.includes('23503')) {
+      currentRoom = null;
+      document.getElementById('chat-main').style.display = 'none';
+      document.getElementById('empty-chat').style.display = 'flex';
+      await loadRooms();
+      alert('채팅방이 종료되었습니다. 새 채팅을 시작해주세요.');
+    }
+  }
 }
 
 function handleKey(e) {
@@ -1061,20 +1071,20 @@ function getAutoStatus(lastSeen) {
 
 function getEffectiveStatus(user) {
   if (!user) return 'offline';
-  const diff = user.last_seen
-    ? (Date.now() - new Date(user.last_seen).getTime()) / 1000
-    : 9999;
 
-  // 부재중 → last_seen 무관하게 유지
+  // 부재중 → 무조건 부재중
   if (user.status === 'busy') return 'busy';
 
-  // chat 또는 online(구버전) → 3분 기준
-  if (user.status === 'chat' || user.status === 'online') {
-    return diff > 180 ? 'offline' : 'chat';
-  }
+  // last_seen 없으면 오프라인
+  if (!user.last_seen) return 'offline';
 
-  // status 없거나 null → last_seen 3분 기준
-  return diff > 180 ? 'offline' : 'chat';
+  const diff = (Date.now() - new Date(user.last_seen).getTime()) / 1000;
+
+  // 5분(300초) 이상 갱신 없으면 오프라인
+  if (diff > 300) return 'offline';
+
+  // 그 외 → 채팅가능 (status 값 무관)
+  return 'chat';
 }
 
 function getStatusInfo(statusValue) {
