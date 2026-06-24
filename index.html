@@ -456,7 +456,7 @@ async function doLogout() {
   }
   ME = null; localStorage.removeItem('uw_me');
   if (realtimeSub) realtimeSub.close();
-  [window._t1, window._t2, window._t3, window._t4, window._t5, window._t6].forEach(t => clearInterval(t));
+  [window._t1, window._t2, window._t3, window._t4, window._t5].forEach(t => clearInterval(t));
   currentRoom = null; rooms = []; allUsers = [];
   lastSeenMsgIds = {}; unreadCounts = {}; appStartTime = null;
   document.getElementById('login-screen').style.display = 'flex';
@@ -482,7 +482,7 @@ async function startApp() {
   window._t1 = setInterval(updateLastSeen, 10000);
   window._t2 = setInterval(loadUsers, 5000);
   window._t5 = setInterval(updateChatHeaderStatus, 5000);
-  window._t6 = setInterval(() => { if (currentRoom) updateReadBadges(); }, 3000);
+  // updateReadBadges는 Realtime으로만 처리
   window._t3 = setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
   window._t4 = setInterval(loadRooms, 2000);
 }
@@ -816,10 +816,12 @@ function renderMessages(msgs, reads=[], memberCount=2) {
     let readBadge = '';
     if (isMine) {
       const readUsers = readMap[m.id] || new Set();
-      const otherCount = memberCount - 1;
+      // 나 제외 읽은 사람 수
       const readCount = [...readUsers].filter(uid => uid !== ME.id).length;
-      const unreadCount = otherCount - readCount;
-      // data-msg-id 항상 생성 (updateReadBadges가 DOM에서 찾을 수 있도록)
+      // 전체 상대방 수 (멤버 - 나)
+      const otherCount = memberCount - 1;
+      // 안 읽은 수 (최소 0)
+      const unreadCount = Math.max(0, otherCount - readCount);
       readBadge = `<div data-msg-id="${m.id}" style="font-size:11px;color:#f5a623;font-weight:600;text-align:right;margin-bottom:2px;display:${unreadCount > 0 ? 'block' : 'none'}">${unreadCount > 0 ? unreadCount : ''}</div>`;
     }
 
@@ -847,7 +849,7 @@ async function sendMessage() {
   input.value = ''; autoResize(input);
   try {
     await api('messages', 'POST', { room_id: currentRoom.id, user_id: ME.id, content });
-    // loadMessages는 Realtime WebSocket이 처리 (중복 방지)
+    await loadMessages();
     await loadRooms();
   } catch(e) {
     console.error(e);
@@ -996,10 +998,7 @@ function subscribeRealtime() {
       // messages INSERT
       if (record.content === undefined) return;
       if (record.user_id === ME.id) {
-        // 내가 보낸 메시지는 sendMessage 후 이미 처리됨
-        if (currentRoom && record.room_id === currentRoom.id) {
-          setTimeout(() => loadMessages(), 300);
-        }
+        if (currentRoom && record.room_id === currentRoom.id) loadMessages();
         return;
       }
       // 상대방 메시지
