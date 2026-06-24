@@ -456,7 +456,7 @@ async function doLogout() {
   }
   ME = null; localStorage.removeItem('uw_me');
   if (realtimeSub) realtimeSub.close();
-  [window._t1, window._t2, window._t3, window._t4, window._t5].forEach(t => clearInterval(t));
+  [window._t1, window._t2, window._t3, window._t4, window._t5, window._t7].forEach(t => clearInterval(t));
   currentRoom = null; rooms = []; allUsers = [];
   lastSeenMsgIds = {}; unreadCounts = {}; appStartTime = null;
   document.getElementById('login-screen').style.display = 'flex';
@@ -485,6 +485,8 @@ async function startApp() {
   // updateReadBadges는 Realtime으로만 처리
   window._t3 = setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
   window._t4 = setInterval(loadRooms, 2000);
+  window._t7 = setInterval(refreshUnreadCounts, 5000);
+  refreshUnreadCounts();
 }
 
 let lastActivity = Date.now();
@@ -579,19 +581,16 @@ async function loadRooms() {
     }
     const lastMsg = lastMsgs[i][0] || null;
 
-    // ── 새 메시지 감지 ──
+    // ── 새 메시지 감지 (알림용) ──
     if (lastMsg && lastMsg.user_id !== ME.id) {
-      const msgTime = new Date(lastMsg.created_at).getTime();
       const prevId = lastSeenMsgIds[r.id];
       const isNew = prevId === undefined
-        ? (msgTime > appStartTime)       // 첫 로드: 앱 시작 이후 메시지만
-        : (prevId !== lastMsg.id);       // 이후: ID 변경 시
+        ? (new Date(lastMsg.created_at + 'Z').getTime() > appStartTime)
+        : (prevId !== lastMsg.id);
 
       if (isNew) {
         const isCurrentRoom = currentRoom && currentRoom.id === r.id;
         if (!isCurrentRoom) {
-          unreadCounts[r.id] = (unreadCounts[r.id] || 0) + 1;
-          updateTitleBadge();
           playBeep();
           const sender = allUsers.find(u => u.id === lastMsg.user_id);
           showBrowserNotif(sender ? sender.name : '누군가', lastMsg.content, r.id);
@@ -605,6 +604,45 @@ async function loadRooms() {
     return { ...r, displayName, lastMsg, otherIds };
   }));
   renderRooms(rooms);
+}
+
+// ── 안 읽은 메시지 수 DB에서 계산 ──
+async function refreshUnreadCounts() {
+  if (!ME) return;
+  try {
+    // 내가 속한 채팅방 목록
+    const members = await api('room_members?user_id=eq.' + ME.id + '&select=room_id');
+    if (!members.length) return;
+    const roomIds = members.map(m => m.room_id);
+
+    // 각 방에서 내가 안 읽은 메시지 수 계산
+    // (내가 보내지 않은 메시지 중 message_reads에 내 id가 없는 것)
+    const newCounts = {};
+    for (const roomId of roomIds) {
+      const isCurrentRoom = currentRoom && currentRoom.id === roomId;
+      if (isCurrentRoom) { newCounts[roomId] = 0; continue; }
+
+      // 내가 안 보낸 메시지 중 내가 읽지 않은 것
+      const msgs = await api('messages?room_id=eq.' + roomId + '&user_id=neq.' + ME.id + '&select=id');
+      if (!msgs.length) { newCounts[roomId] = 0; continue; }
+
+      const msgIds = msgs.map(m => m.id);
+      const reads = await api('message_reads?message_id=in.(' + msgIds.join(',') + ')&user_id=eq.' + ME.id + '&select=message_id');
+      const readIds = new Set(reads.map(r => r.message_id));
+      newCounts[roomId] = msgIds.filter(id => !readIds.has(id)).length;
+    }
+
+    // 변경된 경우만 업데이트
+    let changed = false;
+    for (const [rid, cnt] of Object.entries(newCounts)) {
+      if ((unreadCounts[rid] || 0) !== cnt) { changed = true; break; }
+    }
+    if (changed) {
+      unreadCounts = newCounts;
+      updateTitleBadge();
+      renderRooms(rooms);
+    }
+  } catch(e) {}
 }
 
 function renderRooms(list) {
@@ -645,6 +683,9 @@ async function openRoom(roomId) {
     if (!currentRoom) return;
   }
   clearUnread(roomId);
+  unreadCounts[roomId] = 0;
+  updateTitleBadge();
+  renderRooms(rooms);
   document.querySelectorAll('.room-item').forEach(el => el.classList.remove('active'));
   document.getElementById('empty-chat').style.display = 'none';
   const cm = document.getElementById('chat-main');
