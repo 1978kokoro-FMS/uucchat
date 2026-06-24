@@ -414,10 +414,16 @@ async function doLogin() {
       await api('users?id=eq.' + users[0].id, 'PATCH', { last_seen: new Date().toISOString(), department: dept });
     }
     ME = Array.isArray(users) ? users[0] : users;
-    // 로그인 즉시 online + last_seen 갱신
-    await api('users?id=eq.' + ME.id, 'PATCH', {
-      last_seen: new Date().toISOString(),
-      status: 'chat'
+    // 로그인 즉시 chat + last_seen 갱신
+    await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + ME.id, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ last_seen: new Date().toISOString(), status: 'chat' })
     });
     ME.status = 'chat';
     ME.last_seen = new Date().toISOString();
@@ -737,7 +743,7 @@ async function loadMessages() {
     } catch(e) {}
   }
 
-  // 멤버 수
+  // 멤버 수 - 1:1은 항상 2, 단체방만 실제 멤버 수 조회
   let memberCount = 2;
   if (currentRoom.type === 'group') {
     try {
@@ -832,7 +838,7 @@ async function sendMessage() {
   input.value = ''; autoResize(input);
   try {
     await api('messages', 'POST', { room_id: currentRoom.id, user_id: ME.id, content });
-    await loadMessages();
+    // loadMessages는 Realtime WebSocket이 처리 (중복 방지)
     await loadRooms();
   } catch(e) {
     console.error(e);
@@ -1385,13 +1391,12 @@ async function testNotif() {
 const saved = localStorage.getItem('uw_me');
 if (saved) {
   ME = JSON.parse(saved);
-  // 자동 로그인 시에도 즉시 online으로
+  // 자동 로그인 시 항상 chat으로 (offline 상태 초기화)
+  ME.status = 'chat';
+  ME.last_seen = new Date().toISOString();
   api('users?id=eq.' + ME.id, 'PATCH', {
     last_seen: new Date().toISOString(),
-    status: ME.status || 'chat'
-  }).then(() => {
-    ME.status = ME.status || 'chat';
-    ME.last_seen = new Date().toISOString();
+    status: 'chat'
   });
   startApp();
 } else { loadDepartments(); }
