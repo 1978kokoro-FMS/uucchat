@@ -1001,13 +1001,12 @@ function subscribeRealtime() {
         if (currentRoom && record.room_id === currentRoom.id) loadMessages();
         return;
       }
-      // 상대방 메시지
+      // 상대방 메시지 - unread는 loadRooms에서만 처리 (중복 방지)
       playBeep();
       showBrowserNotif(
         (allUsers.find(u => u.id === record.user_id) || {name:'누군가'}).name,
         record.content, record.room_id
       );
-      addUnread(record.room_id);
       if (currentRoom && record.room_id === currentRoom.id) loadMessages();
       loadRooms();
     } catch(err) {}
