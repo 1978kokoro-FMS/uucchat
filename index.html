@@ -665,14 +665,13 @@ async function openRoom(roomId) {
 async function updateReadBadges() {
   if (!currentRoom) return;
   try {
-    // 현재 보이는 메시지들의 읽음 데이터만 가져오기
-    const msgs = await api('messages?room_id=eq.' + currentRoom.id + '&select=id,user_id&order=created_at.asc&limit=100');
-    const myMsgIds = msgs.filter(m => m.user_id === ME.id).map(m => m.id);
-    if (!myMsgIds.length) return;
+    // DOM에서 현재 뱃지 있는 message_id 목록
+    const badges = document.querySelectorAll('[data-msg-id]');
+    if (!badges.length) return;
+    const myMsgIds = [...badges].map(b => b.getAttribute('data-msg-id'));
 
-    const reads = await api('message_reads?message_id=in.(' + myMsgIds.join(',') + ')&select=*');
+    const reads = await api('message_reads?message_id=in.(' + myMsgIds.join(',') + ')&select=message_id,user_id');
 
-    // 멤버 수
     let memberCount = 2;
     if (currentRoom.type === 'group') {
       const members = await api('room_members?room_id=eq.' + currentRoom.id + '&select=user_id');
@@ -680,27 +679,27 @@ async function updateReadBadges() {
     }
     const otherCount = memberCount - 1;
 
-    // reads를 message_id 기준으로 그룹화
     const readMap = {};
     reads.forEach(r => {
       if (!readMap[r.message_id]) readMap[r.message_id] = new Set();
       readMap[r.message_id].add(r.user_id);
     });
 
-    // DOM에서 각 메시지 읽음 뱃지 업데이트
     myMsgIds.forEach(msgId => {
       const readUsers = readMap[msgId] || new Set();
       const readCount = [...readUsers].filter(uid => uid !== ME.id).length;
       const unreadCount = otherCount - readCount;
-
-      // data-msg-id 속성으로 해당 뱃지 찾아서 업데이트
       const badge = document.querySelector(`[data-msg-id="${msgId}"]`);
       if (badge) {
-        badge.textContent = unreadCount > 0 ? unreadCount : '';
-        badge.style.display = unreadCount > 0 ? 'block' : 'none';
+        if (unreadCount > 0) {
+          badge.textContent = unreadCount;
+          badge.style.display = 'block';
+        } else {
+          badge.style.display = 'none';
+        }
       }
     });
-  } catch(e) { console.error('읽음 업데이트 오류:', e); }
+  } catch(e) {}
 }
 
 async function updateChatHeaderStatus() {
@@ -724,22 +723,21 @@ async function updateChatHeaderStatus() {
 async function loadMessages() {
   if (!currentRoom) return;
   const msgs = await api('messages?room_id=eq.' + currentRoom.id + '&select=*&order=created_at.asc&limit=100');
+  if (!msgs.length) { renderMessages([], [], 2); return; }
 
-  // 읽음 처리 - 현재 방의 모든 메시지를 읽음으로 표시
-  if (msgs.length > 0) {
-    markMessagesAsRead(msgs);
-  }
+  // 내가 안 보낸 메시지 읽음 처리 (비동기, 결과 안 기다림)
+  markMessagesAsRead(msgs);
 
-  // 읽음 데이터 가져오기
-  const msgIds = msgs.map(m => m.id);
+  // 내가 보낸 메시지 ID만 추출
+  const myMsgIds = msgs.filter(m => m.user_id === ME.id).map(m => m.id);
   let reads = [];
-  if (msgIds.length > 0) {
+  if (myMsgIds.length > 0) {
     try {
-      reads = await api('message_reads?message_id=in.(' + msgIds.join(',') + ')&select=*');
+      reads = await api('message_reads?message_id=in.(' + myMsgIds.join(',') + ')&select=message_id,user_id');
     } catch(e) {}
   }
 
-  // 채팅방 멤버 수 가져오기 (단체방용)
+  // 멤버 수
   let memberCount = 2;
   if (currentRoom.type === 'group') {
     try {
@@ -753,19 +751,9 @@ async function loadMessages() {
 
 async function markMessagesAsRead(msgs) {
   if (!ME) return;
-  // 내가 보내지 않은 메시지만 읽음 처리
-  const unreadMsgs = msgs.filter(m => m.user_id !== ME.id);
-  if (!unreadMsgs.length) return;
-
-  // 이미 읽은 메시지 제외
+  const toMark = msgs.filter(m => m.user_id !== ME.id);
+  if (!toMark.length) return;
   try {
-    const msgIds = unreadMsgs.map(m => m.id);
-    const already = await api('message_reads?message_id=in.(' + msgIds.join(',') + ')&user_id=eq.' + ME.id + '&select=message_id');
-    const alreadyIds = new Set(already.map(r => r.message_id));
-    const toMark = unreadMsgs.filter(m => !alreadyIds.has(m.id));
-    if (!toMark.length) return;
-
-    // 한번에 batch insert
     const body = toMark.map(m => ({ message_id: m.id, user_id: ME.id }));
     await fetch(SUPABASE_URL + '/rest/v1/message_reads', {
       method: 'POST',
@@ -773,11 +761,11 @@ async function markMessagesAsRead(msgs) {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_KEY,
         'Authorization': 'Bearer ' + SUPABASE_KEY,
-        'Prefer': 'return=minimal'
+        'Prefer': 'return=minimal,resolution=ignore-duplicates'
       },
       body: JSON.stringify(body)
     });
-  } catch(e) { console.error('읽음 처리 오류:', e); }
+  } catch(e) {}
 }
 
 function renderMessages(msgs, reads=[], memberCount=2) {
