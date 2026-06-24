@@ -450,7 +450,7 @@ async function doLogout() {
   }
   ME = null; localStorage.removeItem('uw_me');
   if (realtimeSub) realtimeSub.close();
-  [window._t1, window._t2, window._t3, window._t4, window._t5].forEach(t => clearInterval(t));
+  [window._t1, window._t2, window._t3, window._t4, window._t5, window._t6].forEach(t => clearInterval(t));
   currentRoom = null; rooms = []; allUsers = [];
   lastSeenMsgIds = {}; unreadCounts = {}; appStartTime = null;
   document.getElementById('login-screen').style.display = 'flex';
@@ -476,6 +476,7 @@ async function startApp() {
   window._t1 = setInterval(updateLastSeen, 10000);
   window._t2 = setInterval(loadUsers, 5000);
   window._t5 = setInterval(updateChatHeaderStatus, 5000);
+  window._t6 = setInterval(() => { if (currentRoom) updateReadBadges(); }, 3000);
   window._t3 = setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
   window._t4 = setInterval(loadRooms, 2000);
 }
@@ -752,22 +753,31 @@ async function loadMessages() {
 
 async function markMessagesAsRead(msgs) {
   if (!ME) return;
-  // 내가 안 읽은 메시지만 읽음 처리
+  // 내가 보내지 않은 메시지만 읽음 처리
   const unreadMsgs = msgs.filter(m => m.user_id !== ME.id);
-  for (const m of unreadMsgs) {
-    try {
-      await fetch(SUPABASE_URL + '/rest/v1/message_reads', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_KEY,
-          'Prefer': 'return=minimal,resolution=ignore-duplicates'
-        },
-        body: JSON.stringify({ message_id: m.id, user_id: ME.id })
-      });
-    } catch(e) {}
-  }
+  if (!unreadMsgs.length) return;
+
+  // 이미 읽은 메시지 제외
+  try {
+    const msgIds = unreadMsgs.map(m => m.id);
+    const already = await api('message_reads?message_id=in.(' + msgIds.join(',') + ')&user_id=eq.' + ME.id + '&select=message_id');
+    const alreadyIds = new Set(already.map(r => r.message_id));
+    const toMark = unreadMsgs.filter(m => !alreadyIds.has(m.id));
+    if (!toMark.length) return;
+
+    // 한번에 batch insert
+    const body = toMark.map(m => ({ message_id: m.id, user_id: ME.id }));
+    await fetch(SUPABASE_URL + '/rest/v1/message_reads', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(body)
+    });
+  } catch(e) { console.error('읽음 처리 오류:', e); }
 }
 
 function renderMessages(msgs, reads=[], memberCount=2) {
