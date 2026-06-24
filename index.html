@@ -726,10 +726,14 @@ async function updateChatHeaderStatus() {
   } catch(e) {}
 }
 
+let _loadingMessages = false;
 async function loadMessages() {
   if (!currentRoom) return;
+  if (_loadingMessages) return;  // 중복 실행 방지
+  _loadingMessages = true;
+  try {
   const msgs = await api('messages?room_id=eq.' + currentRoom.id + '&select=*&order=created_at.asc&limit=100');
-  if (!msgs.length) { renderMessages([], [], 2); return; }
+  if (!msgs.length) { renderMessages([], [], 2); _loadingMessages = false; return; }
 
   // 내가 안 보낸 메시지 읽음 처리 (비동기, 결과 안 기다림)
   markMessagesAsRead(msgs);
@@ -987,7 +991,10 @@ function subscribeRealtime() {
       // messages INSERT
       if (record.content === undefined) return;
       if (record.user_id === ME.id) {
-        if (currentRoom && record.room_id === currentRoom.id) loadMessages();
+        // 내가 보낸 메시지는 sendMessage 후 이미 처리됨
+        if (currentRoom && record.room_id === currentRoom.id) {
+          setTimeout(() => loadMessages(), 300);
+        }
         return;
       }
       // 상대방 메시지
