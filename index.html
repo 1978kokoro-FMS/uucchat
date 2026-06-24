@@ -1068,10 +1068,12 @@ function getEffectiveStatus(user) {
   // 부재중 → last_seen 무관하게 유지
   if (user.status === 'busy') return 'busy';
 
-  // 채팅가능 → 3분(180초) 이상 갱신 없으면 오프라인
-  if (user.status === 'chat') return diff > 180 ? 'offline' : 'chat';
+  // chat 또는 online(구버전) → 3분 기준
+  if (user.status === 'chat' || user.status === 'online') {
+    return diff > 180 ? 'offline' : 'chat';
+  }
 
-  // status 없거나 다른 값 → last_seen 3분 기준
+  // status 없거나 null → last_seen 3분 기준
   return diff > 180 ? 'offline' : 'chat';
 }
 
