@@ -661,6 +661,47 @@ async function openRoom(roomId) {
 }
 
 // ── 메시지 로드 ──
+async function updateReadBadges() {
+  if (!currentRoom) return;
+  try {
+    // 현재 보이는 메시지들의 읽음 데이터만 가져오기
+    const msgs = await api('messages?room_id=eq.' + currentRoom.id + '&select=id,user_id&order=created_at.asc&limit=100');
+    const myMsgIds = msgs.filter(m => m.user_id === ME.id).map(m => m.id);
+    if (!myMsgIds.length) return;
+
+    const reads = await api('message_reads?message_id=in.(' + myMsgIds.join(',') + ')&select=*');
+
+    // 멤버 수
+    let memberCount = 2;
+    if (currentRoom.type === 'group') {
+      const members = await api('room_members?room_id=eq.' + currentRoom.id + '&select=user_id');
+      memberCount = members.length;
+    }
+    const otherCount = memberCount - 1;
+
+    // reads를 message_id 기준으로 그룹화
+    const readMap = {};
+    reads.forEach(r => {
+      if (!readMap[r.message_id]) readMap[r.message_id] = new Set();
+      readMap[r.message_id].add(r.user_id);
+    });
+
+    // DOM에서 각 메시지 읽음 뱃지 업데이트
+    myMsgIds.forEach(msgId => {
+      const readUsers = readMap[msgId] || new Set();
+      const readCount = [...readUsers].filter(uid => uid !== ME.id).length;
+      const unreadCount = otherCount - readCount;
+
+      // data-msg-id 속성으로 해당 뱃지 찾아서 업데이트
+      const badge = document.querySelector(`[data-msg-id="${msgId}"]`);
+      if (badge) {
+        badge.textContent = unreadCount > 0 ? unreadCount : '';
+        badge.style.display = unreadCount > 0 ? 'block' : 'none';
+      }
+    });
+  } catch(e) { console.error('읽음 업데이트 오류:', e); }
+}
+
 async function updateChatHeaderStatus() {
   if (!currentRoom || currentRoom.type === 'group') return;
   if (!currentRoom.otherIds || !currentRoom.otherIds.length) return;
@@ -938,9 +979,9 @@ function subscribeRealtime() {
         return;
       }
 
-      // message_reads INSERT → 내가 보낸 메시지 읽음 처리 즉시 반영
+      // message_reads INSERT → 읽음 숫자만 즉시 업데이트
       if (data.topic === 'realtime:public:message_reads') {
-        if (currentRoom) loadMessages();
+        if (currentRoom) updateReadBadges();
         return;
       }
 
