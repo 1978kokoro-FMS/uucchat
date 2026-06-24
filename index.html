@@ -785,6 +785,8 @@ function renderMessages(msgs, reads=[], memberCount=2) {
   const wrap = document.getElementById('messages-wrap');
   if (!msgs.length) { wrap.innerHTML = '<div style="text-align:center;padding:40px;color:#ccc;font-size:14px;">첫 메시지를 보내보세요!</div>'; return; }
 
+  console.log('[renderMessages] msgs:', msgs.length, 'reads:', reads.length, 'memberCount:', memberCount);
+
   // reads를 message_id 기준으로 그룹화
   const readMap = {};
   reads.forEach(r => {
