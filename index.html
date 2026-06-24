@@ -801,16 +801,11 @@ function renderMessages(msgs, reads=[], memberCount=2) {
     let readBadge = '';
     if (isMine) {
       const readUsers = readMap[m.id] || new Set();
-      // 나 자신 제외한 멤버 수
       const otherCount = memberCount - 1;
-      // 읽은 사람 수 (나 제외)
       const readCount = [...readUsers].filter(uid => uid !== ME.id).length;
       const unreadCount = otherCount - readCount;
-      if (unreadCount > 0) {
-        // 안 읽은 사람 있으면 숫자 표시
-        readBadge = `<div style="font-size:11px;color:#f5a623;font-weight:600;text-align:right;margin-bottom:2px;">${unreadCount}</div>`;
-      }
-      // unreadCount === 0이면 아무것도 표시 안 함 (카톡처럼)
+      // data-msg-id 항상 생성 (updateReadBadges가 DOM에서 찾을 수 있도록)
+      readBadge = `<div data-msg-id="${m.id}" style="font-size:11px;color:#f5a623;font-weight:600;text-align:right;margin-bottom:2px;display:${unreadCount > 0 ? 'block' : 'none'}">${unreadCount > 0 ? unreadCount : ''}</div>`;
     }
 
     html += `<div class="msg-row ${isMine?'mine':''}">
