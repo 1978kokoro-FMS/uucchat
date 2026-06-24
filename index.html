@@ -726,41 +726,39 @@ async function updateChatHeaderStatus() {
   } catch(e) {}
 }
 
-let _loadingMessages = false;
-async function loadMessages() {
+let _msgLoadTimer = null;
+function loadMessages() {
+  // 디바운스: 100ms 안에 여러 번 호출되면 마지막 것만 실행
+  if (_msgLoadTimer) clearTimeout(_msgLoadTimer);
+  _msgLoadTimer = setTimeout(_doLoadMessages, 100);
+}
+
+async function _doLoadMessages() {
   if (!currentRoom) return;
-  if (_loadingMessages) return;
-  _loadingMessages = true;
   try {
     const msgs = await api('messages?room_id=eq.' + currentRoom.id + '&select=*&order=created_at.asc&limit=100');
     if (!msgs.length) { renderMessages([], [], 2); return; }
 
-    // 내가 안 보낸 메시지 읽음 처리
+    // 읽음 처리 (비동기)
     markMessagesAsRead(msgs);
 
-    // 내가 보낸 메시지 ID만 추출
+    // 내가 보낸 메시지 reads 조회
     const myMsgIds = msgs.filter(m => m.user_id === ME.id).map(m => m.id);
     let reads = [];
     if (myMsgIds.length > 0) {
-      try {
-        reads = await api('message_reads?message_id=in.(' + myMsgIds.join(',') + ')&select=message_id,user_id');
-      } catch(e) {}
+      reads = await api('message_reads?message_id=in.(' + myMsgIds.join(',') + ')&select=message_id,user_id');
     }
 
-    // 멤버 수 - 1:1은 항상 2, 단체방만 실제 멤버 수 조회
+    // 멤버 수
     let memberCount = 2;
     if (currentRoom.type === 'group') {
-      try {
-        const members = await api('room_members?room_id=eq.' + currentRoom.id + '&select=user_id');
-        memberCount = members.length;
-      } catch(e) {}
+      const members = await api('room_members?room_id=eq.' + currentRoom.id + '&select=user_id');
+      memberCount = members.length;
     }
 
     renderMessages(msgs, reads, memberCount);
   } catch(e) {
     console.error('loadMessages 오류:', e);
-  } finally {
-    _loadingMessages = false;
   }
 }
 
