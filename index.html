@@ -1060,14 +1060,19 @@ function getAutoStatus(lastSeen) {
 }
 
 function getEffectiveStatus(user) {
-  const diff = (Date.now() - new Date(user.last_seen).getTime()) / 1000;
+  if (!user) return 'offline';
+  const diff = user.last_seen
+    ? (Date.now() - new Date(user.last_seen).getTime()) / 1000
+    : 9999;
+
   // 부재중 → last_seen 무관하게 유지
   if (user.status === 'busy') return 'busy';
-  // 채팅가능 → 30분(1800초) 이상 미활동 시에만 오프라인
-  if (user.status === 'chat') return diff > 1800 ? 'offline' : 'chat';
-  // 나머지 → 45초 이상 갱신 없으면 오프라인
-  if (diff > 45) return 'offline';
-  return 'chat';
+
+  // 채팅가능 → 3분(180초) 이상 갱신 없으면 오프라인
+  if (user.status === 'chat') return diff > 180 ? 'offline' : 'chat';
+
+  // status 없거나 다른 값 → last_seen 3분 기준
+  return diff > 180 ? 'offline' : 'chat';
 }
 
 function getStatusInfo(statusValue) {
