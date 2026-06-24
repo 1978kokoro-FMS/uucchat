@@ -1087,7 +1087,9 @@ function getEffectiveStatus(user) {
   // last_seen 없으면 오프라인
   if (!user.last_seen) return 'offline';
 
-  const diff = (Date.now() - new Date(user.last_seen).getTime()) / 1000;
+  // last_seen이 UTC임을 명시 (Z 없으면 붙여줌)
+  const lastSeenStr = user.last_seen.endsWith('Z') ? user.last_seen : user.last_seen + 'Z';
+  const diff = (Date.now() - new Date(lastSeenStr).getTime()) / 1000;
 
   // 5분(300초) 이상 갱신 없으면 오프라인
   if (diff > 300) return 'offline';
