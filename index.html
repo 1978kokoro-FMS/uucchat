@@ -432,7 +432,7 @@ function showErr(msg) {
 function doLogout() {
   ME = null; localStorage.removeItem('uw_me');
   if (realtimeSub) realtimeSub.close();
-  [window._t1, window._t2, window._t3, window._t4].forEach(t => clearInterval(t));
+  [window._t1, window._t2, window._t3, window._t4, window._t5].forEach(t => clearInterval(t));
   currentRoom = null; rooms = []; allUsers = [];
   lastSeenMsgIds = {}; unreadCounts = {}; appStartTime = null;
   document.getElementById('login-screen').style.display = 'flex';
@@ -457,6 +457,7 @@ async function startApp() {
   requestNotifPermission();
   window._t1 = setInterval(updateLastSeen, 10000);
   window._t2 = setInterval(loadUsers, 8000);
+  window._t5 = setInterval(updateChatHeaderStatus, 8000);
   window._t3 = setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
   window._t4 = setInterval(loadRooms, 2000);
 }
@@ -625,22 +626,7 @@ async function openRoom(roomId) {
   document.getElementById('ch-name').textContent = currentRoom.displayName;
 
   if (!isGroup && currentRoom.otherIds.length > 0) {
-    // 최신 상태 직접 fetch
-    try {
-      const freshUsers = await api('users?id=eq.' + currentRoom.otherIds[0] + '&select=*');
-      const other = freshUsers && freshUsers[0] ? freshUsers[0] : allUsers.find(u=>u.id===currentRoom.otherIds[0]);
-      if (other) {
-        // allUsers도 갱신
-        const idx = allUsers.findIndex(u=>u.id===other.id);
-        if (idx >= 0) allUsers[idx] = other;
-        const st = getStatusInfo(getEffectiveStatus(other));
-        const msg = other.status_msg ? ` · ${other.status_msg}` : '';
-        document.getElementById('ch-sub').innerHTML =
-          `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${st.color};margin-right:4px;"></span>${st.label}${msg}`;
-      }
-    } catch(e) {
-      document.getElementById('ch-sub').textContent = '';
-    }
+    updateChatHeaderStatus();
   } else {
     document.getElementById('ch-sub').textContent = '단체 채팅방';
   }
@@ -648,6 +634,24 @@ async function openRoom(roomId) {
 }
 
 // ── 메시지 로드 ──
+async function updateChatHeaderStatus() {
+  if (!currentRoom || currentRoom.type === 'group') return;
+  if (!currentRoom.otherIds || !currentRoom.otherIds.length) return;
+  try {
+    const freshUsers = await api('users?id=eq.' + currentRoom.otherIds[0] + '&select=*');
+    const other = freshUsers && freshUsers[0] ? freshUsers[0] : allUsers.find(u=>u.id===currentRoom.otherIds[0]);
+    if (other) {
+      const idx = allUsers.findIndex(u=>u.id===other.id);
+      if (idx >= 0) allUsers[idx] = other;
+      const st = getStatusInfo(getEffectiveStatus(other));
+      const msg = other.status_msg ? ` · ${other.status_msg}` : '';
+      const sub = document.getElementById('ch-sub');
+      if (sub) sub.innerHTML =
+        `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${st.color};margin-right:4px;"></span>${st.label}${msg}`;
+    }
+  } catch(e) {}
+}
+
 async function loadMessages() {
   if (!currentRoom) return;
   const msgs = await api('messages?room_id=eq.' + currentRoom.id + '&select=*&order=created_at.asc&limit=100');
