@@ -456,8 +456,8 @@ async function startApp() {
   autoDeleteOldMessages();
   requestNotifPermission();
   window._t1 = setInterval(updateLastSeen, 10000);
-  window._t2 = setInterval(loadUsers, 8000);
-  window._t5 = setInterval(updateChatHeaderStatus, 8000);
+  window._t2 = setInterval(loadUsers, 5000);
+  window._t5 = setInterval(updateChatHeaderStatus, 5000);
   window._t3 = setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
   window._t4 = setInterval(loadRooms, 2000);
 }
@@ -496,6 +496,8 @@ async function loadUsers() {
   if (!ME) return;
   allUsers = await api('users?select=id,name,department,last_seen,status,status_msg&order=name');
   renderOnlineList();
+  // 채팅 헤더 상태도 즉시 갱신
+  updateChatHeaderStatus();
 }
 
 function renderOnlineList() {
