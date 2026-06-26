@@ -513,6 +513,22 @@ async function startApp() {
   window._t4 = setInterval(loadRooms, 2000);
   window._t7 = setInterval(refreshUnreadCounts, 5000);
   refreshUnreadCounts();
+  openChatFromQuery();
+}
+
+// ── URL의 ?chatWith=이름 으로 자동 채팅 시작 (조직도 연동) ──
+async function openChatFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const name = params.get('chatWith');
+  if (!name) return;
+  history.replaceState(null, '', window.location.pathname);
+  const target = allUsers.find(u => u.name === name);
+  if (!target) {
+    alert(name + '님은 아직 메신저에 접속한 적이 없어요. 먼저 로그인 후 다시 시도해주세요.');
+    return;
+  }
+  if (target.id === ME.id) return;
+  await startDirectChat(target.id, target.name);
 }
 
 let lastActivity = Date.now();

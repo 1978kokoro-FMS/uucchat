@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>의왕도시공사 조직도</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f5f6fa; color: #222; }
+
+  /* 상단 헤더 */
+  .header { background: #1a3a5c; color: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+  .header .subtitle { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+
+  /* 탭 */
+  .tabs { display: flex; background: #fff; border-bottom: 1px solid #e0e4ef; padding: 0 24px; }
+  .tab { padding: 12px 20px; font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; color: #888; font-weight: 500; }
+  .tab.active { border-bottom-color: #1a3a5c; color: #1a3a5c; font-weight: 600; }
+
+  /* 검색바 */
+  .search-bar { background: #fff; padding: 14px 24px; border-bottom: 1px solid #e0e4ef; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .search-input-wrap { position: relative; flex: 1; min-width: 200px; }
+  .search-input-wrap input { width: 100%; padding: 9px 36px 9px 12px; border: 1px solid #d0d5e8; border-radius: 6px; font-size: 14px; font-family: inherit; outline: none; }
+  .search-input-wrap input:focus { border-color: #1a3a5c; }
+  .search-input-wrap .clear-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #aaa; font-size: 16px; line-height: 1; }
+  .filter-select { padding: 9px 12px; border: 1px solid #d0d5e8; border-radius: 6px; font-size: 14px; font-family: inherit; outline: none; background: #fff; color: #222; cursor: pointer; }
+  .result-count { font-size: 13px; color: #888; white-space: nowrap; }
+
+  /* ───── 인명부 탭 ───── */
+  #tab-list { display: block; }
+  .person-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; padding: 16px 24px; }
+  .person-card {
+    background: #fff; border: 1px solid #e4e8f0; border-radius: 10px;
+    padding: 14px 16px; cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .person-card:hover { box-shadow: 0 2px 10px rgba(26,58,92,0.12); border-color: #b0bcd8; }
+  .person-card.highlight { border-color: #f5a623; box-shadow: 0 0 0 2px #f5a62340; }
+  .avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+  .avatar.grade-임원 { background: #fde8c8; color: #a0540a; }
+  .avatar.grade-처장 { background: #ddeaff; color: #1a3a8c; }
+  .avatar.grade-팀장 { background: #d9f4e8; color: #0d6b3e; }
+  .avatar.grade-일반 { background: #f0eefd; color: #4a3ab0; }
+  .avatar.grade-공무직 { background: #f5f0e8; color: #7a6030; }
+  .avatar.grade-계약직 { background: #fce8ec; color: #9c2030; }
+  .card-info { flex: 1; min-width: 0; }
+  .card-name { font-size: 15px; font-weight: 600; }
+  .card-title { font-size: 12px; color: #1a3a5c; background: #e8eef8; display: inline-block; padding: 2px 7px; border-radius: 4px; margin: 3px 0; }
+  .card-dept { font-size: 12px; color: #666; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-contact { font-size: 12px; color: #999; margin-top: 4px; }
+  .card-ext { display: inline-block; background: #f0f4ff; color: #3a5aa0; padding: 1px 6px; border-radius: 3px; font-size: 11px; margin-right: 4px; }
+
+  /* 상세 모달 */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 14px; padding: 28px; width: 340px; max-width: 95vw; box-shadow: 0 8px 32px rgba(0,0,0,0.18); position: relative; }
+  .modal-close { position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 20px; cursor: pointer; color: #aaa; }
+  .modal-avatar { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; margin: 0 auto 12px; }
+  .modal-name { text-align: center; font-size: 20px; font-weight: 700; }
+  .modal-title { text-align: center; font-size: 13px; color: #666; margin-top: 4px; }
+  .modal-divider { border: none; border-top: 1px solid #eee; margin: 16px 0; }
+  .modal-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 14px; }
+  .modal-label { color: #999; width: 60px; flex-shrink: 0; font-size: 13px; }
+  .modal-value { color: #222; font-weight: 500; }
+
+  /* 부서 모달 */
+  .dept-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 110; align-items: flex-start; justify-content: center; padding-top: 48px; }
+  .dept-modal-overlay.open { display: flex; }
+  .dept-modal { background: #fff; border-radius: 16px; width: 680px; max-width: 97vw; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; overflow: hidden; }
+  .dept-modal-header { padding: 20px 24px 14px; border-bottom: 1px solid #eee; flex-shrink: 0; }
+  .dept-modal-title { font-size: 19px; font-weight: 700; color: #1a2a5e; }
+  .dept-modal-sub { font-size: 13px; color: #888; margin-top: 3px; }
+  .dept-modal-close { position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 22px; cursor: pointer; color: #aaa; }
+  .dept-modal-body { overflow-y: auto; padding: 16px 24px 20px; }
+  .dept-section { margin-bottom: 18px; }
+  .dept-section-title { font-size: 13px; font-weight: 600; color: #4a6abf; background: #eef2ff; padding: 5px 10px; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .dept-section-title .cnt { background: #4a6abf; color: #fff; font-size: 11px; padding: 1px 6px; border-radius: 10px; }
+  .dept-member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 7px; }
+  .dept-member-card { background: #f8faff; border: 1px solid #e4eaf7; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.15s; }
+  .dept-member-card:hover { background: #e8eeff; border-color: #4a6abf; }
+  .dept-member-name { font-size: 14px; font-weight: 600; color: #222; }
+  .dept-member-info { font-size: 11px; color: #888; margin-top: 2px; }
+  .dept-member-ext { font-size: 11px; color: #4a6abf; margin-top: 1px; }
+
+  /* ───── 조직도 탭 ───── */
+  #tab-tree { display: none; padding: 20px 16px 32px; }
+  .org-wrap { overflow-x: auto; overflow-y: visible; }
+  .org-chart-root { display: flex; flex-direction: column; align-items: center; min-width: max-content; padding: 12px 24px 32px; }
+  .org-box {
+    border: 1.5px solid #b0c0de; border-radius: 7px; padding: 7px 14px;
+    text-align: center; cursor: pointer; transition: all 0.15s;
+    background: #fff; white-space: nowrap;
+  }
+  .org-box:hover { box-shadow: 0 2px 10px rgba(26,58,92,0.18); }
+  .org-box.level-ceo   { background: #1a3a5c; color: #fff; border-color: #1a3a5c; min-width: 130px; }
+  .org-box.level-direct{ background: #c0392b; color: #fff; border-color: #96281b; min-width: 110px; }
+  .org-box.level-honbu { background: #2e5fa3; color: #fff; border-color: #2e5fa3; min-width: 110px; }
+  .org-box.level-cheo  { background: #e8eef8; border-color: #8fa8d0; color: #1a2a5e; }
+  .org-box.level-team  { background: #f4f7fd; border-color: #c8d4e8; color: #333; }
+  .org-box.highlight-tree { border-color: #f5a623 !important; box-shadow: 0 0 0 3px #f5a62340 !important; }
+  .box-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
+  .box-sub  { font-size: 11px; opacity: 0.8; margin-top: 2px; }
+  .member-list { background: #f4f7fd; border: 1px solid #d0daee; border-radius: 7px; padding: 5px 7px; min-width: 100px; }
+  .team-member { font-size: 11px; color: #444; padding: 2px 4px; border-radius: 3px; cursor: pointer; white-space: nowrap; display: block; }
+  .team-member:hover { background: #dde8f8; color: #1a3a5c; }
+  /* 연결선 */
+  .conn-v  { width: 2px; background: #b0c0de; flex-shrink: 0; }
+  .conn-h  { height: 2px; background: #b0c0de; flex-shrink: 0; }
+  .children-wrap { display: flex; flex-direction: column; align-items: center; }
+  .children-row  { display: flex; align-items: flex-start; position: relative; }
+  .child-col     { display: flex; flex-direction: column; align-items: center; }
+  .toggle-btn { font-size: 11px; color: #888; background: none; border: 1px solid #ddd; border-radius: 4px; padding: 2px 8px; cursor: pointer; margin-top: 4px; }
+
+  /* 빈 결과 */
+  .empty { text-align: center; padding: 60px 24px; color: #aaa; font-size: 15px; }
+
+  /* 인쇄 */
+  @media print {
+    .tabs, .search-bar, .modal-overlay { display: none !important; }
+    .person-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header h1" style="font-size:18px;font-weight:600;">의왕도시공사 조직도</div>
+    <div class="subtitle">2026년 6월 8일 기준</div>
+  </div>
+  <div style="font-size:12px;opacity:0.6;">총 <span id="total-count">0</span>명</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('list')">👤 인명 검색</div>
+  <div class="tab" onclick="switchTab('tree')">🌳 조직도 보기</div>
+</div>
+
+<div class="search-bar">
+  <div class="search-input-wrap">
+    <input type="text" id="searchInput" placeholder="이름, 부서, 직급으로 검색..." oninput="doSearch()" />
+    <button class="clear-btn" onclick="clearSearch()">×</button>
+  </div>
+  <select class="filter-select" id="filterHonbu" onchange="doSearch()">
+    <option value="">전체 본부</option>
+  </select>
+  <select class="filter-select" id="filterTeam" onchange="doSearch()">
+    <option value="">전체 팀</option>
+  </select>
+  <select class="filter-select" id="filterGrade" onchange="doSearch()">
+    <option value="">전체 직급</option>
+    <option>임원급</option><option>팀장급</option>
+    <option>1급</option><option>2급</option><option>3급</option>
+    <option>4급</option><option>5급</option><option>6급</option><option>7급</option>
+    <option>공무직</option><option>계약직</option>
+  </select>
+  <span class="result-count" id="resultCount"></span>
+</div>
+
+<div id="tab-list">
+  <div class="person-grid" id="personGrid"></div>
+  <div class="empty" id="emptyMsg" style="display:none;">검색 결과가 없습니다.</div>
+</div>
+
+<div id="tab-tree">
+  <div class="org-wrap" id="orgWrap"></div>
+</div>
+
+<!-- 상세 모달 -->
+<!-- 부서 인원 모달 -->
+<div class="dept-modal-overlay" id="deptModal" onclick="closeDeptModal(event)">
+  <div class="dept-modal">
+    <button class="dept-modal-close" onclick="closeDeptModal()">×</button>
+    <div class="dept-modal-header">
+      <div class="dept-modal-title" id="dm-title"></div>
+      <div class="dept-modal-sub" id="dm-sub"></div>
+    </div>
+    <div class="dept-modal-body" id="dm-body"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-avatar" id="m-avatar"></div>
+    <div class="modal-name" id="m-name"></div>
+    <div class="modal-title" id="m-title"></div>
+    <hr class="modal-divider">
+    <div class="modal-row"><span class="modal-label">소속</span><span class="modal-value" id="m-dept"></span></div>
+    <div class="modal-row"><span class="modal-label">직급</span><span class="modal-value" id="m-grade"></span></div>
+    <div class="modal-row"><span class="modal-label">내선</span><span class="modal-value" id="m-ext"></span></div>
+    <div class="modal-row"><span class="modal-label">휴대폰</span><span class="modal-value" id="m-phone"></span></div>
+    <button id="m-chat-btn" onclick="goChat()" style="width:100%;margin-top:16px;padding:10px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">💬 메신저로 채팅하기</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  📋 데이터 — 내일 이 부분만 교체하면 됩니다!
+//  형식: { name, grade, title, honbu, cheo, team, ext, phone }
+// ══════════════════════════════════════════════════
+const DATA = [
+  { name:'노성화', grade:'임원급', title:'사장', honbu:'임원', cheo:'임원', team:'임원실', ext:'7300', phone:'-' },
+  { name:'김신', grade:'임원급', title:'본부장(상임이사)', honbu:'경영사업본부', cheo:'경영사업본부', team:'경영사업본부', ext:'7306', phone:'010-6252-1991' },
+  { name:'정두식', grade:'임원급', title:'본부장(상임이사)', honbu:'개발사업본부', cheo:'개발사업본부', team:'개발사업본부', ext:'7307', phone:'010-3165-3356' },
+  { name:'박성호', grade:'임원급', title:'실장(1급)', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획홍보실', ext:'7310', phone:'010-8776-5757' },
+  { name:'송태석', grade:'임원급', title:'처장(2급)', honbu:'경영사업본부', cheo:'경영지원처', team:'경영지원처', ext:'7383', phone:'010-3788-4714' },
+  { name:'임규택', grade:'임원급', title:'처장(1급)', honbu:'경영사업본부', cheo:'생활체육처', team:'생활체육처', ext:'7329', phone:'010-8812-5348' },
+  { name:'김대진', grade:'임원급', title:'직무대행(처장)', honbu:'개발사업본부', cheo:'개발사업처', team:'사업기획팀', ext:'7344', phone:'010-2108-2233' },
+  { name:'최재경', grade:'임원급', title:'처장(2급)', honbu:'개발사업본부', cheo:'교통레저처', team:'교통레저처', ext:'7445', phone:'010-4462-0106' },
+  { name:'홍미구', grade:'팀장급', title:'팀장(2급)', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7386', phone:'010-3628-2141' },
+  { name:'허재희', grade:'4급', title:'일반4급', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7381', phone:'010-5293-1260' },
+  { name:'서정욱', grade:'5급', title:'일반5급', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7332', phone:'010-4021-8364' },
+  { name:'최정범', grade:'5급', title:'일반5급', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7382', phone:'010-4136-7293' },
+  { name:'조지영', grade:'6급', title:'일반6급', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7326', phone:'010-5320-3949' },
+  { name:'이영진', grade:'7급', title:'일반7급', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7327', phone:'010-6626-5602' },
+  { name:'안지현', grade:'7급', title:'일반7급', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7362', phone:'010-9321-1134' },
+  { name:'김태진', grade:'공무직', title:'공무직', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7349', phone:'010-8098-3019' },
+  { name:'송수경', grade:'팀장급', title:'팀장(3급)', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획법무팀', ext:'7380', phone:'010-6353-7126' },
+  { name:'이 혁', grade:'4급', title:'일반4급', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획법무팀', ext:'7323', phone:'010-5653-5511' },
+  { name:'권은경', grade:'4급', title:'일반4급', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획법무팀', ext:'7322', phone:'010-9093-1503' },
+  { name:'최예인', grade:'5급', title:'일반5급', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획법무팀', ext:'7328', phone:'010-4145-8896' },
+  { name:'정민규', grade:'5급', title:'일반5급', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획법무팀', ext:'7319', phone:'010-8010-5857' },
+  { name:'김서연A', grade:'6급', title:'일반6급', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획법무팀', ext:'7316', phone:'010-3427-5084' },
+  { name:'황다연', grade:'계약직', title:'계약직', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획법무팀', ext:'7353', phone:'010-2596-5024' },
+  { name:'김민주', grade:'팀장급', title:'팀장(3급)', honbu:'기획홍보실', cheo:'기획홍보실', team:'성과평가팀', ext:'7325', phone:'010-7391-5004' },
+  { name:'김현준', grade:'3급', title:'일반3급', honbu:'기획홍보실', cheo:'기획홍보실', team:'성과평가팀', ext:'7355', phone:'010-4628-6493' },
+  { name:'박고훈', grade:'6급', title:'일반6급', honbu:'기획홍보실', cheo:'기획홍보실', team:'성과평가팀', ext:'7318', phone:'010-5037-3828' },
+  { name:'박현준B', grade:'7급', title:'일반7급', honbu:'기획홍보실', cheo:'기획홍보실', team:'성과평가팀', ext:'7384', phone:'010-2395-1885' },
+  { name:'임길택', grade:'팀장급', title:'팀장(2급)', honbu:'기획홍보실', cheo:'기획홍보실', team:'고객홍보팀', ext:'7308', phone:'010-7338-8375' },
+  { name:'류재선', grade:'4급', title:'일반4급', honbu:'기획홍보실', cheo:'기획홍보실', team:'고객홍보팀', ext:'7303', phone:'010-9399-5433' },
+  { name:'최윤정', grade:'6급', title:'일반6급', honbu:'기획홍보실', cheo:'기획홍보실', team:'고객홍보팀', ext:'7458', phone:'010-4754-2735' },
+  { name:'문채이', grade:'7급', title:'일반(운영)7급', honbu:'기획홍보실', cheo:'기획홍보실', team:'고객홍보팀', ext:'7317', phone:'010-9246-2772' },
+  { name:'김동언', grade:'팀장급', title:'팀장(2급)', honbu:'경영사업본부', cheo:'경영지원처', team:'인사노무팀', ext:'7330', phone:'010-5323-1253' },
+  { name:'정난영', grade:'3급', title:'일반3급', honbu:'경영사업본부', cheo:'경영지원처', team:'인사노무팀', ext:'7331', phone:'010-4846-9058' },
+  { name:'이혜정', grade:'4급', title:'일반4급', honbu:'경영사업본부', cheo:'경영지원처', team:'인사노무팀', ext:'7334', phone:'010-4615-1155' },
+  { name:'이선미', grade:'4급', title:'일반4급', honbu:'경영사업본부', cheo:'경영지원처', team:'인사노무팀', ext:'7335', phone:'010-8737-4879' },
+  { name:'박현식', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'경영지원처', team:'인사노무팀', ext:'7336', phone:'010-9167-9026' },
+  { name:'김영진', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'경영지원처', team:'인사노무팀', ext:'7342', phone:'010-4071-0051' },
+  { name:'이현준', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'경영지원처', team:'인사노무팀', ext:'7321', phone:'010-9566-5546' },
+  { name:'임회진', grade:'팀장급', title:'팀장(2급)', honbu:'경영사업본부', cheo:'경영지원처', team:'재무회계팀', ext:'7311', phone:'010-8328-1792' },
+  { name:'박인성', grade:'4급', title:'일반4급', honbu:'경영사업본부', cheo:'경영지원처', team:'재무회계팀', ext:'7312', phone:'010-9990-7033' },
+  { name:'송주연', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'경영지원처', team:'재무회계팀', ext:'7313', phone:'010-2021-4391' },
+  { name:'허재원', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'경영지원처', team:'재무회계팀', ext:'7315', phone:'010-2009-5985' },
+  { name:'김지연', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'경영지원처', team:'재무회계팀', ext:'7314', phone:'010-3381-0180' },
+  { name:'조종배', grade:'팀장급', title:'팀장(3급)', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'7320', phone:'010-5425-1009' },
+  { name:'성민철', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'7324', phone:'010-5463-6943' },
+  { name:'박상훈', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'7333', phone:'010-9113-9311' },
+  { name:'안다영', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'7338', phone:'010-4054-7630' },
+  { name:'김성국', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'7343', phone:'010-4339-0620' },
+  { name:'이아름', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'7304', phone:'010-6205-5006' },
+  { name:'김민규', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'7305', phone:'010-4231-8856' },
+  { name:'손점숙', grade:'계약직', title:'계약직', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'-', phone:'010-6710-5788' },
+  { name:'최유미', grade:'팀장급', title:'팀장(2급)', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7420', phone:'010-5349-1836' },
+  { name:'이동학', grade:'3급', title:'일반3급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7426', phone:'010-5156-0817' },
+  { name:'고화종', grade:'4급', title:'일반4급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7423', phone:'010-2268-5400' },
+  { name:'연경은', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7425', phone:'010-9338-8115' },
+  { name:'차재준', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7495', phone:'010-4906-3790' },
+  { name:'고소연', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7477', phone:'010-5645-1027' },
+  { name:'이필현', grade:'4급', title:'일반4급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7422', phone:'010-3254-8078' },
+  { name:'김광선', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7439', phone:'010-9411-3343' },
+  { name:'박현석', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7438', phone:'010-7658-7690' },
+  { name:'이인숙', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7430, 7434', phone:'010-5479-0368' },
+  { name:'최정님', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7430, 7434', phone:'010-9904-9214' },
+  { name:'한진영', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7430, 7434', phone:'010-2354-9975' },
+  { name:'이송희', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7466', phone:'010-2775-5786' },
+  { name:'김재현', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7435', phone:'010-5524-0058' },
+  { name:'김기호', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7421', phone:'010-3123-0736' },
+  { name:'최윤경', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7408', phone:'010-4715-6734' },
+  { name:'진현수', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7432', phone:'010-9962-5410' },
+  { name:'임태홍', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7409', phone:'010-4194-1497' },
+  { name:'이지혜', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7436', phone:'010-3617-9861' },
+  { name:'석주현', grade:'계약직', title:'계약직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7436', phone:'010-5478-8247' },
+  { name:'김슬기', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7424', phone:'010-4111-0657' },
+  { name:'한미라', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7437', phone:'010-9102-2732' },
+  { name:'문인영', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7437', phone:'010-2226-8191' },
+  { name:'윤상현', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7424', phone:'010-4334-5285' },
+  { name:'김미란', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7437', phone:'010-4340-9106' },
+  { name:'김동년', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7424', phone:'010-9363-0744' },
+  { name:'송영도', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'425-1991', phone:'010-4555-3257' },
+  { name:'최광희', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'425-1991', phone:'010-3363-1217' },
+  { name:'김주희', grade:'팀장급', title:'팀장(3급)', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7396', phone:'010-8312-2859' },
+  { name:'장신호', grade:'4급', title:'일반4급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7394', phone:'010-2012-2515' },
+  { name:'조선미', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7393', phone:'010-4841-2198' },
+  { name:'최기태', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7395', phone:'010-8899-8312' },
+  { name:'황인선', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7398', phone:'010-2563-0074' },
+  { name:'정지혜', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7397', phone:'010-3879-4391' },
+  { name:'신성욱', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7377', phone:'010-5375-2525' },
+  { name:'진선웅', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7379', phone:'010-4740-2963' },
+  { name:'천재민', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7378', phone:'010-9549-2672' },
+  { name:'김은숙', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7390, 7391', phone:'010-5452-9549' },
+  { name:'정진영', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7390, 7391', phone:'010-7146-2273' },
+  { name:'박지호', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7390, 7391', phone:'010-3111-7074' },
+  { name:'송문석', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7460', phone:'010-8634-7989' },
+  { name:'원수진', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7464', phone:'010-6227-1556' },
+  { name:'김택승', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7465', phone:'010-2218-2308' },
+  { name:'정희경', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7365', phone:'010-2536-7015' },
+  { name:'정민수', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7456', phone:'010-8926-4643' },
+  { name:'맹설아', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7457', phone:'010-6281-4223' },
+  { name:'최문석', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7366', phone:'010-5153-8799' },
+  { name:'박철종', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7366', phone:'010-8576-4151' },
+  { name:'이호열', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7366', phone:'010-3369-9004' },
+  { name:'정수연', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7358', phone:'010-2890-1770' },
+  { name:'안정원', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7358', phone:'010-2646-3883' },
+  { name:'신은미', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7358', phone:'010-4285-3234' },
+  { name:'김은종', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'461-5395', phone:'010-3664-3014' },
+  { name:'이지헌', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'461-5395', phone:'010-7739-5177' },
+  { name:'임종영', grade:'계약직', title:'계약직', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'-', phone:'010-5246-0193' },
+  { name:'이정재', grade:'계약직', title:'계약직', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'-', phone:'010-8531-6829' },
+  { name:'박현준A', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'461-5395', phone:'010-5425-1033' },
+  { name:'원재웅', grade:'팀장급', title:'팀장(3급)', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8010', phone:'010-8317-2277' },
+  { name:'김종황', grade:'3급', title:'일반3급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8011', phone:'010-9250-8647' },
+  { name:'김명동', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8012', phone:'010-2273-8967' },
+  { name:'김성욱', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8013', phone:'010-2323-0333' },
+  { name:'송아름', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8014', phone:'010-3310-2136' },
+  { name:'나지영', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8015', phone:'010-5463-9001' },
+  { name:'최태웅', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8016', phone:'010-3363-0213' },
+  { name:'우정원', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8018', phone:'010-2757-6783' },
+  { name:'김윤섭', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8019', phone:'010-9164-6669' },
+  { name:'우성주', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8021', phone:'010-2124-6885' },
+  { name:'변동민', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8000~1', phone:'010-3641-7452' },
+  { name:'송인숙', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8000~1', phone:'010-7356-0613' },
+  { name:'김옥자', grade:'계약직', title:'계약직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8000~1', phone:'010-8588-6926' },
+  { name:'송수진', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8003', phone:'010-8954-7126' },
+  { name:'양지혜', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8003', phone:'010-7361-0328' },
+  { name:'양성군', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8002', phone:'010-4574-7015' },
+  { name:'김주희', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8002', phone:'010-9914-1607' },
+  { name:'김동혁', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8007', phone:'010-9755-5208' },
+  { name:'지원석', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8006', phone:'010-2973-4960' },
+  { name:'조소영', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8030~1', phone:'010-9977-5126' },
+  { name:'이지원', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8030~1', phone:'010-9467-1056' },
+  { name:'이옥경', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8008', phone:'010-3494-6424' },
+  { name:'박민철', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8009', phone:'010-5540-2917' },
+  { name:'장현우', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8009', phone:'010-5886-4096' },
+  { name:'조미정', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8008', phone:'010-4494-2625' },
+  { name:'전여진', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8008', phone:'010-2312-5357' },
+  { name:'김팽선', grade:'계약직', title:'촉탁직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8009', phone:'010-5222-2889' },
+  { name:'신영길', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'477-4636', phone:'010-6209-6688' },
+  { name:'이준희', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'477-4636', phone:'010-9940-6424' },
+  { name:'김민영B', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'7407', phone:'010-5488-0527' },
+  { name:'김희용', grade:'팀장급', title:'팀장(2급)', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8050', phone:'010-6651-3079' },
+  { name:'우동구', grade:'4급', title:'일반4급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8051', phone:'010-5056-1016' },
+  { name:'김병규', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8055', phone:'010-6483-2520' },
+  { name:'정기훈', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8052', phone:'010-5745-2992' },
+  { name:'박승지', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8054', phone:'010-3362-1781' },
+  { name:'심헌용', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8053', phone:'010-6870-1992' },
+  { name:'박예진', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8060~1', phone:'010-6271-1063' },
+  { name:'장은영', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8060~1', phone:'010-8784-4805' },
+  { name:'최현아', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8060~1', phone:'010-3429-0409' },
+  { name:'심재훈', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8056', phone:'010-3658-5796' },
+  { name:'남준우', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8062', phone:'010-8271-7476' },
+  { name:'주서윤', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8063', phone:'010-9449-9003' },
+  { name:'지남희', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8064', phone:'010-9043-0532' },
+  { name:'류세훈', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8056', phone:'010-9149-7385' },
+  { name:'오치상', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8072', phone:'010-7159-7373' },
+  { name:'김영대', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8075', phone:'010-3144-5598' },
+  { name:'김상진', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8074', phone:'010-9232-5650' },
+  { name:'이윤식', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8073', phone:'010-5391-8841' },
+  { name:'오창수', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8076', phone:'010-7443-3036' },
+  { name:'김다희', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8000~1', phone:'010-4804-5209' },
+  { name:'윤연옥', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8070~1', phone:'010-9188-7601' },
+  { name:'최현석', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8070~1', phone:'010-7159-5619' },
+  { name:'변경순', grade:'계약직', title:'계약직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8070~1', phone:'010-9168-7823' },
+  { name:'윤소라', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8078', phone:'010-5058-6314' },
+  { name:'박중현', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8077', phone:'010-8977-8732' },
+  { name:'최해영', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8067', phone:'010-9957-1604' },
+  { name:'유정숙', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8067', phone:'010-8972-7936' },
+  { name:'김종일', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8066', phone:'010-2750-2612' },
+  { name:'양명임', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8067', phone:'010-2433-4565' },
+  { name:'김대진', grade:'팀장급', title:'팀장(2급)', honbu:'개발사업본부', cheo:'개발사업처', team:'사업기획팀', ext:'7344', phone:'010-2108-2233' },
+  { name:'김지유', grade:'4급', title:'일반4급', honbu:'개발사업본부', cheo:'개발사업처', team:'사업기획팀', ext:'7341', phone:'010-6215-7759' },
+  { name:'박대한', grade:'4급', title:'일반4급', honbu:'개발사업본부', cheo:'개발사업처', team:'사업기획팀', ext:'7369', phone:'010-3117-9667' },
+  { name:'박대원', grade:'6급', title:'일반6급', honbu:'개발사업본부', cheo:'개발사업처', team:'사업기획팀', ext:'7347', phone:'010-3062-3534' },
+  { name:'정진원', grade:'팀장급', title:'팀장(3급)', honbu:'개발사업본부', cheo:'개발사업처', team:'개발사업팀', ext:'7351', phone:'010-5091-2632' },
+  { name:'나병진', grade:'3급', title:'일반3급', honbu:'개발사업본부', cheo:'개발사업처', team:'개발사업팀', ext:'7348', phone:'010-4579-0111' },
+  { name:'황보형', grade:'4급', title:'일반4급', honbu:'개발사업본부', cheo:'개발사업처', team:'개발사업팀', ext:'7357', phone:'010-2773-2987' },
+  { name:'이진한', grade:'5급', title:'일반 5급', honbu:'개발사업본부', cheo:'개발사업처', team:'개발사업팀', ext:'7368', phone:'010-6290-8707' },
+  { name:'황병만', grade:'팀장급', title:'팀장(3급)', honbu:'개발사업본부', cheo:'개발사업처', team:'건설사업팀', ext:'7350', phone:'010-7272-4877' },
+  { name:'안광욱', grade:'4급', title:'일반4급', honbu:'개발사업본부', cheo:'개발사업처', team:'건설사업팀', ext:'7354', phone:'010-4644-3171' },
+  { name:'박준표', grade:'6급', title:'일반6급', honbu:'개발사업본부', cheo:'개발사업처', team:'건설사업팀', ext:'7356', phone:'010-9044-9511' },
+  { name:'김예지', grade:'7급', title:'일반7급', honbu:'개발사업본부', cheo:'개발사업처', team:'건설사업팀', ext:'7364', phone:'010-4605-8195' },
+  { name:'김창균', grade:'팀장급', title:'팀장(1급)', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7448', phone:'010-6491-4186' },
+  { name:'김인철', grade:'4급', title:'일반4급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7441', phone:'010-4781-3737' },
+  { name:'이라현', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7361', phone:'010-9314-2294' },
+  { name:'김상운', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'-', phone:'010-3369-4241' },
+  { name:'김영광', grade:'6급', title:'일반6급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7442', phone:'010-7132-5563' },
+  { name:'하현수', grade:'6급', title:'일반6급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7363', phone:'010-6212-8056' },
+  { name:'지명국', grade:'7급', title:'일반7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7387', phone:'010-6797-1733' },
+  { name:'조영길', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-4450-3569' },
+  { name:'이효진', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-4472-7763' },
+  { name:'이상면', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-8728-6424' },
+  { name:'조명호', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-9722-7639' },
+  { name:'박영찬', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-4717-7567' },
+  { name:'김용상', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-2580-0054' },
+  { name:'박동욱', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-5696-7616' },
+  { name:'정호준', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-4618-4687' },
+  { name:'송영필', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'-', phone:'010-4199-2735' },
+  { name:'이란영', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7469', phone:'010-8865-5076' },
+  { name:'이소연', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7472', phone:'010-7136-4555' },
+  { name:'김가희', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7471', phone:'010-4776-9607' },
+  { name:'최우영', grade:'계약직', title:'단시간계약직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7480', phone:'010-5167-2816' },
+  { name:'김종삼', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7476', phone:'010-9245-2573' },
+  { name:'이충규', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7473, 7474', phone:'010-6701-0024' },
+  { name:'최정용', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7473, 7474', phone:'010-9069-8440' },
+  { name:'현명호', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7473, 7474', phone:'010-4153-3356' },
+  { name:'송민호', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7473, 7474', phone:'010-9018-3171' },
+  { name:'권오철', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7473, 7474', phone:'010-8777-5725' },
+  { name:'김진기', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7473, 7474', phone:'010-4693-0658' },
+  { name:'최정희', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7473, 7474', phone:'010-6201-4986' },
+  { name:'김주영A', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7444', phone:'010-3600-5554' },
+  { name:'김주영B', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7479', phone:'010-5675-1824' },
+  { name:'최재선', grade:'팀장급', title:'팀장(2급)', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7486', phone:'010-3525-6083' },
+  { name:'김종훈', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7470', phone:'010-6397-1975' },
+  { name:'이재건', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7370', phone:'010-8981-9512' },
+  { name:'김형주', grade:'7급', title:'일반7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7453', phone:'010-6217-3092' },
+  { name:'박덕열', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7483', phone:'010-8947-1367' },
+  { name:'표성순', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7482', phone:'010-6739-5875' },
+  { name:'정환필', grade:'계약직', title:'단시간계약직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7482', phone:'010-5679-5661' },
+  { name:'이오순', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7499', phone:'010-3790-3983' },
+  { name:'류재경', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7499', phone:'010-3459-9612' },
+  { name:'이경옥', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7499', phone:'010-7788-2351' },
+  { name:'최규호', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7498', phone:'010-4825-7781' },
+  { name:'전정호', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7498', phone:'010-3340-8435' },
+  { name:'김정현', grade:'계약직', title:'촉탁직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7499', phone:'010-8004-6753' },
+  { name:'조명연', grade:'계약직', title:'계약직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7498', phone:'010-8213-8159' },
+  { name:'홍상교', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7482', phone:'010-8850-2564' },
+  { name:'신승환', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7482', phone:'010-3175-3387' },
+  { name:'강영구', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7482', phone:'010-6890-0901' },
+  { name:'오승석', grade:'4급', title:'일반4급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7492', phone:'010-2087-9648' },
+  { name:'김재훈', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7493', phone:'010-7689-0164' },
+  { name:'양종석', grade:'6급', title:'일반6급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7491', phone:'010-5653-9645' },
+  { name:'김선일', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7492', phone:'010-9448-2659' },
+  { name:'김설화', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'-', phone:'010-2654-5145' },
+  { name:'송도석', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7455', phone:'010-2477-3999' },
+  { name:'민지빈', grade:'7급', title:'일반7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7452', phone:'010-7902-1031' },
+  { name:'조영해', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7451', phone:'010-5077-5418' },
+  { name:'이상민A', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7388', phone:'010-3913-4578' },
+  { name:'이상민B', grade:'계약직', title:'촉탁직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7498', phone:'010-5315-4136' },
+  { name:'황의철', grade:'팀장급', title:'팀장(3급)', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7385', phone:'010-9644-7916' },
+  { name:'김승조', grade:'3급', title:'일반3급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7374', phone:'010-6423-1108' },
+  { name:'이성일', grade:'4급', title:'일반4급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7373', phone:'010-5125-0409' },
+  { name:'우진석', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7346', phone:'010-5391-4467' },
+  { name:'서미경', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7454', phone:'010-3036-3478' },
+  { name:'차제희', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7467', phone:'010-4260-8803' },
+  { name:'이정인', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7371, 7376', phone:'010-2364-0320' },
+  { name:'이순희', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-6243-8945' },
+  { name:'신성우', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-6474-3531' },
+  { name:'김기주', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-2383-4420' },
+  { name:'김효순', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-3657-4395' },
+  { name:'박은미', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-8818-8317' },
+  { name:'박재부', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-4300-6472' },
+  { name:'박준영', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7371, 7376', phone:'010-3080-1247' },
+  { name:'심유석', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7371, 7376', phone:'010-4285-1959' },
+  { name:'이건성', grade:'계약직', title:'계약직', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7372', phone:'010-4712-8819' },
+  { name:'이해진', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-4517-9135' },
+  { name:'오범석', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-8998-2725' },
+  { name:'최성우', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-3080-5038' },
+  { name:'조성회', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-9538-2532' },
+  { name:'양성수', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-3155-3343' },
+  { name:'김민영A', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7371, 7376', phone:'010-8708-2224' },
+];
+
+// ══════════════════════════════════════
+// 초기화
+// ══════════════════════════════════════
+let filteredData = [...DATA];
+
+function init() {
+  document.getElementById('total-count').textContent = DATA.length;
+  populateFilters();
+  renderCards(DATA);
+  renderTree();
+  // 조직도 탭이 숨겨져 있으므로 탭 전환 시 그려짐 (switchTab에서 처리)
+}
+
+function populateFilters() {
+  const honbuOrder = ['임원','안전감사팀','기획홍보실','경영사업본부','개발사업본부'];
+  const honbus = honbuOrder.filter(h => DATA.some(d => d.honbu === h));
+  const honbuSel = document.getElementById('filterHonbu');
+  honbus.forEach(h => { const o = document.createElement('option'); o.value = h; o.textContent = h; honbuSel.appendChild(o); });
+
+  const teams = [...new Set(DATA.map(d => d.team).filter(t => t && !['임원실','기획조정실','경영사업본부','개발사업본부','경영지원처','생활체육처','개발사업처','교통레저처','기획홍보실','안전감사팀'].includes(t)))];
+  const teamSel = document.getElementById('filterTeam');
+  teams.sort().forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; teamSel.appendChild(o); });
+}
+
+function doSearch() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const honbu = document.getElementById('filterHonbu').value;
+  const team = document.getElementById('filterTeam').value;
+  const grade = document.getElementById('filterGrade').value;
+
+  filteredData = DATA.filter(d => {
+    const matchQ = !q || d.name.toLowerCase().includes(q) || d.honbu.toLowerCase().includes(q)
+      || d.team.toLowerCase().includes(q) || d.grade.toLowerCase().includes(q) || d.title.toLowerCase().includes(q);
+    const matchH = !honbu || d.honbu === honbu;
+    const matchT = !team || d.team === team;
+    const matchG = !grade || d.grade.includes(grade) || d.title.includes(grade);
+    return matchQ && matchH && matchT && matchG;
+  });
+
+  renderCards(filteredData);
+  document.getElementById('resultCount').textContent = `${filteredData.length}명`;
+  document.getElementById('emptyMsg').style.display = filteredData.length === 0 ? 'block' : 'none';
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('filterHonbu').value = '';
+  document.getElementById('filterTeam').value = '';
+  document.getElementById('filterGrade').value = '';
+  doSearch();
+}
+
+// ── 아바타 이니셜 & 색상 ──
+function getGradeClass(p) {
+  if (p.grade === '임원급' || p.title.includes('본부장') || p.title.includes('사장') || p.title.includes('처장') || p.title.includes('실장')) return 'grade-임원';
+  if (p.grade === '팀장급' || p.title.includes('팀장')) return 'grade-팀장';
+  if (p.grade === '공무직') return 'grade-공무직';
+  if (p.grade === '계약직') return 'grade-계약직';
+  return 'grade-일반';
+}
+
+function initials(name) { return name.slice(0, 2); }
+
+// ── 인명부 렌더링 ──
+function renderCards(list) {
+  const grid = document.getElementById('personGrid');
+  grid.innerHTML = list.map((p, i) => `
+    <div class="person-card" onclick="openModal(${DATA.indexOf(p)})">
+      <div class="avatar ${getGradeClass(p)}">${initials(p.name)}</div>
+      <div class="card-info">
+        <div class="card-name">${p.name}</div>
+        <div class="card-title">${p.title}</div>
+        <div class="card-dept">${p.honbu} · ${p.team}</div>
+        <div class="card-contact">
+          <span class="card-ext">☎ ${p.ext}</span>
+          ${p.phone !== '-' ? `<span>${p.phone}</span>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── 모달 ──
+function openModalByName(name, team) {
+  const idx = DATA.findIndex(d => d.name === name && d.team === team);
+  if (idx >= 0) openModal(idx);
+}
+
+function openModal(idx) {
+  const p = DATA[idx];
+  const cls = getGradeClass(p);
+  document.getElementById('m-avatar').className = `modal-avatar avatar ${cls}`;
+  document.getElementById('m-avatar').textContent = initials(p.name);
+  document.getElementById('m-name').textContent = p.name;
+  document.getElementById('m-title').textContent = p.title;
+  document.getElementById('m-dept').textContent = `${p.honbu} › ${p.cheo || p.honbu} › ${p.team}`;
+  document.getElementById('m-grade').textContent = p.grade;
+  document.getElementById('m-ext').textContent = p.ext;
+  document.getElementById('m-phone').textContent = p.phone;
+  document.getElementById('m-chat-btn').dataset.name = p.name;
+  document.getElementById('modal').classList.add('open');
+}
+function goChat() {
+  const name = document.getElementById('m-chat-btn').dataset.name;
+  if (!name) return;
+  window.open('https://uucchat.vercel.app/?chatWith=' + encodeURIComponent(name), '_blank');
+}
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal') || e.currentTarget.classList.contains('modal-close'))
+    document.getElementById('modal').classList.remove('open');
+}
+
+// ── 탭 전환 ──
+function switchTab(t) {
+  document.getElementById('tab-list').style.display = t === 'list' ? 'block' : 'none';
+  document.getElementById('tab-tree').style.display = t === 'tree' ? 'block' : 'none';
+  document.querySelectorAll('.tab').forEach((el, i) => el.classList.toggle('active', (i === 0) === (t === 'list')));
+  if (t === 'tree') setTimeout(drawConnectors, 50);
+}
+
+// ── 조직도 트리 렌더링 ──
+function renderTree() {
+  const wrap = document.getElementById('orgWrap');
+
+  // ── 데이터 트리 구성 ──
+  // 사장: 임원 honbu 중 team==='임원실'
+  const ceo = DATA.find(d => d.team === '임원실');
+
+  // 직속: 안전감사팀, 기획홍보실
+  function makeDirectNode(honbuName) {
+    const people = DATA.filter(d => d.honbu === honbuName);
+    const head   = people.filter(d => d.team === honbuName);
+    const teams  = [...new Set(people.map(d => d.team).filter(t => t !== honbuName))];
+    if (teams.length === 0) {
+      // 산하 팀 없음 (안전감사팀) - 박스 이름만 표시, 팀원 목록은 유지
+      return { name: honbuName, level: 'direct', head: [], members: people };
+    }
+    // 산하 팀 있음 (기획홍보실)
+    return {
+      name: honbuName, level: 'direct', head,
+      children: teams.map(t => ({
+        name: t, level: 'team',
+        members: people.filter(d => d.team === t)
+      }))
+    };
+  }
+
+  // 본부 노드 생성
+  function makeHonbuNode(honbuName) {
+    const people = DATA.filter(d => d.honbu === honbuName);
+    const head   = people.filter(d => d.team === honbuName);
+    const cheoNames = [...new Set(people.map(d => d.cheo).filter(c => c !== honbuName))];
+    return {
+      name: honbuName, level: 'honbu', head,
+      children: cheoNames.map(c => {
+        const cPeople = people.filter(d => d.cheo === c);
+        const cheoHead = cPeople.filter(d => d.team === c);
+        const teamNames = [...new Set(cPeople.map(d => d.team).filter(t => t !== c && t !== honbuName))];
+        return {
+          name: c, level: 'cheo', head: cheoHead,
+          children: teamNames.map(t => ({
+            name: t, level: 'team',
+            members: cPeople.filter(d => d.team === t)
+          }))
+        };
+      })
+    };
+  }
+
+  const treeData = {
+    name: '의왕도시공사', level: 'ceo',
+    ext: ceo ? ceo.ext : '7300',
+    ceo: ceo,
+    // 사장 직속: 안전감사팀, 기획홍보실
+    directs: ['안전감사팀', '기획홍보실'].map(makeDirectNode),
+    // 본부
+    honbus: ['경영사업본부', '개발사업본부'].map(makeHonbuNode)
+  };
+
+  wrap.innerHTML = `<div class="org-chart-root">${buildTreeHTML(treeData)}</div>`;
+}
+
+// ── 노드 HTML 빌더 (재귀) ──
+function buildTreeHTML(node) {
+  const VH = 20; // 수직선 높이(px)
+
+  function headSpan(people) {
+    return people.map(p => {
+      const n = p.name.replace(/'/g,"&#39;");
+      const t = p.team.replace(/'/g,"&#39;");
+      return `<span onclick="event.stopPropagation();openModalByName('${n}','${t}')" style="cursor:pointer;text-decoration:underline dotted;">${p.name}</span>`;
+    }).join(', ');
+  }
+
+  function boxHtml(name, level, head, ext, clickFn) {
+    const hs = head && head.length ? `<div class="box-sub">${headSpan(head)}</div>` : '';
+    const es = ext ? `<div class="box-sub">${ext}</div>` : '';
+    return `<div class="org-box level-${level}" onclick="${clickFn}">${
+      `<div class="box-name">${name}</div>${hs}${es}`
+    }</div>`;
+  }
+
+  function memberListHtml(members) {
+    if (!members || !members.length) return '';
+    return `<div class="conn-v" style="height:${VH}px"></div>
+    <div class="member-list">${members.map(m =>
+      `<div class="team-member" onclick="openModal(${DATA.indexOf(m)})">${m.name} <span style="color:#aaa;font-size:10px">${m.grade}</span></div>`
+    ).join('')}</div>`;
+  }
+
+  // 자식 행 + 연결선 렌더
+  function childrenHtml(children, nextBuilderFn) {
+    if (!children || !children.length) return '';
+    const cols = children.map(c => nextBuilderFn(c));
+    if (cols.length === 1) {
+      // 자식 1개 → 단순 수직선
+      return `<div class="conn-v" style="height:${VH}px"></div>${cols[0]}`;
+    }
+    // 자식 여러 개 → 가로선 + 수직선 분기
+    // 각 자식을 child-col 으로 감싸고 수평 연결선은 SVG로 처리
+    const colsHtml = cols.map(c =>
+      `<div class="child-col" style="padding:0 10px">
+        <div class="conn-v" style="height:${VH}px"></div>
+        ${c}
+      </div>`
+    ).join('');
+    return `
+      <div class="conn-v" style="height:${VH}px"></div>
+      <div style="position:relative">
+        <div class="children-row" id="cr_${Math.random().toString(36).slice(2)}">${colsHtml}</div>
+      </div>`;
+  }
+
+  // ── 팀 노드 ──
+  function teamNode(node) {
+    const esc = node.name.replace(/'/g,"&#39;");
+    const box = boxHtml(node.name, 'team', null, null, `openDeptModal('${esc}','team')`);
+    return `<div style="display:flex;flex-direction:column;align-items:center">${box}${memberListHtml(node.members)}</div>`;
+  }
+
+  // ── 처 노드 ──
+  function cheoNode(node) {
+    const esc = node.name.replace(/'/g,"&#39;");
+    const box = boxHtml(node.name, 'cheo', node.head, null, `openDeptModal('${esc}','cheo')`);
+    const kids = childrenHtml(node.children, teamNode);
+    return `<div style="display:flex;flex-direction:column;align-items:center">${box}${kids}</div>`;
+  }
+
+  // ── 본부 노드 ──
+  function honbuNode(node) {
+    const esc = node.name.replace(/'/g,"&#39;");
+    const box = boxHtml(node.name, 'honbu', node.head, null, `openDeptModal('${esc}','honbu')`);
+    const kids = childrenHtml(node.children, cheoNode);
+    return `<div style="display:flex;flex-direction:column;align-items:center">${box}${kids}</div>`;
+  }
+
+  // ── 직속(안전감사팀/기획홍보실) 노드 ──
+  function directNode(node) {
+    const esc = node.name.replace(/'/g,"&#39;");
+    const box = boxHtml(node.name, 'direct', node.head, null, `openDeptModal('${esc}','honbu')`);
+    if (node.members) {
+      // 안전감사팀 등 팀 자체가 말단
+      return `<div style="display:flex;flex-direction:column;align-items:center">${box}${memberListHtml(node.members)}</div>`;
+    }
+    const kids = childrenHtml(node.children, teamNode);
+    return `<div style="display:flex;flex-direction:column;align-items:center">${box}${kids}</div>`;
+  }
+
+  // ── 최상위: 사장 ──
+  const ceoClick = node.ceo ? `openModal(${DATA.indexOf(node.ceo)})` : '';
+  const ceoBox = `<div class="org-box level-ceo" onclick="${ceoClick}" style="cursor:pointer">
+    <div class="box-name">의왕도시공사</div>
+    ${node.ext ? `<div class="box-sub">${node.ext}</div>` : ''}
+  </div>`;
+
+  // 사장 아래: 직속 + 본부를 한 행으로
+  const allChildren = [...node.directs, ...node.honbus];
+  const allCols = allChildren.map(c => {
+    const isHonbu = c.level === 'honbu';
+    const inner = isHonbu ? honbuNode(c) : directNode(c);
+    return `<div class="child-col" style="padding:0 10px">
+      <div class="conn-v" style="height:${VH}px"></div>
+      ${inner}
+    </div>`;
+  });
+
+  // 수평 연결선 구현: 가로 절대 배치 div
+  const rowId = 'toprow';
+  const rowHtml = `
+    <div class="conn-v" style="height:${VH}px"></div>
+    <div style="position:relative">
+      <div class="children-row" id="${rowId}">${allCols.join('')}</div>
+    </div>`;
+
+  return `<div style="display:flex;flex-direction:column;align-items:center">
+    ${ceoBox}${rowHtml}
+  </div>`;
+}
+
+// 수평 연결선을 렌더 후 DOM에 그리기
+function drawConnectors() {
+  document.querySelectorAll('.children-row').forEach(row => {
+    const cols = row.querySelectorAll(':scope > .child-col');
+    if (cols.length < 2) return;
+    const rowRect = row.getBoundingClientRect();
+    const firstConnV = cols[0].querySelector(':scope > .conn-v');
+    const lastConnV  = cols[cols.length-1].querySelector(':scope > .conn-v');
+    if (!firstConnV || !lastConnV) return;
+    const firstRect = firstConnV.getBoundingClientRect();
+    const lastRect  = lastConnV.getBoundingClientRect();
+    const y = firstRect.top - rowRect.top + firstRect.height / 2;
+    const x1 = firstRect.left - rowRect.left + firstRect.width / 2;
+    const x2 = lastRect.left  - rowRect.left + lastRect.width  / 2;
+    // 기존 선 제거
+    row.querySelectorAll(':scope > .h-connector').forEach(e => e.remove());
+    const line = document.createElement('div');
+    line.className = 'h-connector';
+    line.style.cssText = `position:absolute;top:${y}px;left:${x1}px;width:${x2-x1}px;height:2px;background:#b0c0de;pointer-events:none;`;
+    row.appendChild(line);
+  });
+}
+
+// ── 부서 모달 ──
+function openDeptModal(deptName, level) {
+  // level: 'honbu' | 'cheo' | 'team'
+  let members = [];
+  if (level === 'honbu') {
+    members = DATA.filter(d => d.honbu === deptName);
+  } else if (level === 'cheo') {
+    members = DATA.filter(d => d.cheo === deptName);
+  } else {
+    members = DATA.filter(d => d.team === deptName);
+  }
+
+  // 팀별로 그룹핑
+  const groups = {};
+  members.forEach(m => {
+    const key = (level === 'team') ? deptName : m.team;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(m);
+  });
+
+  document.getElementById('dm-title').textContent = deptName;
+  document.getElementById('dm-sub').textContent = `총 ${members.length}명`;
+
+  let bodyHtml = '';
+  Object.entries(groups).forEach(([teamName, ppl]) => {
+    const label = (level === 'honbu' || level === 'cheo') ? teamName : '';
+    if (label) {
+      bodyHtml += `<div class="dept-section">
+        <div class="dept-section-title">${label}<span class="cnt">${ppl.length}</span></div>
+        <div class="dept-member-grid">`;
+    } else {
+      bodyHtml += `<div class="dept-section"><div class="dept-member-grid">`;
+    }
+    ppl.forEach(p => {
+      const idx = DATA.indexOf(p);
+      bodyHtml += `<div class="dept-member-card" onclick="closeDeptModal();openModal(${idx})">
+        <div class="dept-member-name">${p.name}</div>
+        <div class="dept-member-info">${p.title}</div>
+        ${p.ext && p.ext !== '-' ? `<div class="dept-member-ext">☎ ${p.ext}</div>` : ''}
+      </div>`;
+    });
+    bodyHtml += `</div></div>`;
+  });
+
+  document.getElementById('dm-body').innerHTML = bodyHtml;
+  document.getElementById('deptModal').classList.add('open');
+}
+
+function closeDeptModal(e) {
+  if (!e || e.target === document.getElementById('deptModal') || e.currentTarget.classList.contains('dept-modal-close'))
+    document.getElementById('deptModal').classList.remove('open');
+}
+
+function highlightNode(el, name) {
+  document.querySelectorAll('.org-box').forEach(b => b.classList.remove('highlight-tree'));
+  el.classList.add('highlight-tree');
+  document.getElementById('searchInput').value = name;
+  doSearch();
+  switchTab('list');
+}
+
+init();
+</script>
+</body>
+</html>
