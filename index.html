@@ -3,1565 +3,851 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>의왕도시공사 메신저</title>
+<title>의왕도시공사 조직도</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f0f2f5; height: 100vh; display: flex; flex-direction: column; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f5f6fa; color: #222; }
 
-/* ── 로그인 ── */
-#login-screen {
-  display: flex; align-items: center; justify-content: center;
-  height: 100vh; background: #f0f2f5;
-}
-.login-box {
-  background: #fff; border-radius: 16px; padding: 40px 36px;
-  width: 360px; box-shadow: 0 4px 24px rgba(0,0,0,0.10);
-  text-align: center;
-}
-.login-logo { width: 52px; height: 52px; background: #1a3a5c; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
-.login-logo span { color: #fff; font-size: 22px; font-weight: 700; }
-.login-box h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; color: #111; }
-.login-box p { font-size: 13px; color: #888; margin-bottom: 24px; }
-.login-box input {
-  width: 100%; padding: 11px 14px; border: 1.5px solid #e0e4ef;
-  border-radius: 8px; font-size: 15px; font-family: inherit;
-  outline: none; margin-bottom: 10px;
-}
-.login-box input:focus { border-color: #1a3a5c; }
-.login-box select {
-  width: 100%; padding: 11px 14px; border: 1.5px solid #e0e4ef;
-  border-radius: 8px; font-size: 15px; font-family: inherit;
-  outline: none; margin-bottom: 18px; background: #fff; color: #333;
-}
-.login-btn {
-  width: 100%; padding: 12px; background: #1a3a5c; color: #fff;
-  border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
-  font-family: inherit; cursor: pointer;
-}
-.login-btn:hover { background: #25527d; }
-.login-err { color: #e24b4a; font-size: 13px; margin-top: 8px; display: none; }
+  /* 상단 헤더 */
+  .header { background: #1a3a5c; color: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+  .header .subtitle { font-size: 12px; opacity: 0.7; margin-top: 2px; }
 
-/* ── 메인 레이아웃 ── */
-#app { display: none; height: 100vh; flex-direction: row; }
+  /* 탭 */
+  .tabs { display: flex; background: #fff; border-bottom: 1px solid #e0e4ef; padding: 0 24px; }
+  .tab { padding: 12px 20px; font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; color: #888; font-weight: 500; }
+  .tab.active { border-bottom-color: #1a3a5c; color: #1a3a5c; font-weight: 600; }
 
-/* 사이드바 */
-.sidebar {
-  width: 300px; min-width: 260px; background: #1a3a5c;
-  display: flex; flex-direction: column; height: 100vh;
-}
-.sidebar-header {
-  padding: 18px 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.10);
-}
-.sidebar-header h1 { font-size: 16px; font-weight: 700; color: #fff; }
-.me-info { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
-.me-avatar {
-  width: 34px; height: 34px; border-radius: 50%;
-  background: rgba(255,255,255,0.18); display: flex; align-items: center;
-  justify-content: center; font-size: 13px; font-weight: 600; color: #fff; flex-shrink: 0;
-}
-.me-name { font-size: 14px; color: #fff; font-weight: 500; }
-.me-dept { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 1px; }
-.logout-btn {
-  margin-left: auto; font-size: 11px; color: rgba(255,255,255,0.5);
-  background: none; border: none; cursor: pointer; padding: 4px 6px;
-}
-.logout-btn:hover { color: #fff; }
+  /* 검색바 */
+  .search-bar { background: #fff; padding: 14px 24px; border-bottom: 1px solid #e0e4ef; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .search-input-wrap { position: relative; flex: 1; min-width: 200px; }
+  .search-input-wrap input { width: 100%; padding: 9px 36px 9px 12px; border: 1px solid #d0d5e8; border-radius: 6px; font-size: 14px; font-family: inherit; outline: none; }
+  .search-input-wrap input:focus { border-color: #1a3a5c; }
+  .search-input-wrap .clear-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #aaa; font-size: 16px; line-height: 1; }
+  .filter-select { padding: 9px 12px; border: 1px solid #d0d5e8; border-radius: 6px; font-size: 14px; font-family: inherit; outline: none; background: #fff; color: #222; cursor: pointer; }
+  .result-count { font-size: 13px; color: #888; white-space: nowrap; }
 
-.sidebar-tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,0.10); }
-.stab {
-  flex: 1; padding: 10px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.55);
-  cursor: pointer; border-bottom: 2px solid transparent;
-}
-.stab.active { color: #fff; border-bottom-color: #5b9bd5; }
+  /* ───── 인명부 탭 ───── */
+  #tab-list { display: block; }
+  .person-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; padding: 16px 24px; }
+  .person-card {
+    background: #fff; border: 1px solid #e4e8f0; border-radius: 10px;
+    padding: 14px 16px; cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .person-card:hover { box-shadow: 0 2px 10px rgba(26,58,92,0.12); border-color: #b0bcd8; }
+  .person-card.highlight { border-color: #f5a623; box-shadow: 0 0 0 2px #f5a62340; }
+  .avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+  .avatar.grade-임원 { background: #fde8c8; color: #a0540a; }
+  .avatar.grade-처장 { background: #ddeaff; color: #1a3a8c; }
+  .avatar.grade-팀장 { background: #d9f4e8; color: #0d6b3e; }
+  .avatar.grade-일반 { background: #f0eefd; color: #4a3ab0; }
+  .avatar.grade-공무직 { background: #f5f0e8; color: #7a6030; }
+  .avatar.grade-계약직 { background: #fce8ec; color: #9c2030; }
+  .card-info { flex: 1; min-width: 0; }
+  .card-name { font-size: 15px; font-weight: 600; }
+  .card-title { font-size: 12px; color: #1a3a5c; background: #e8eef8; display: inline-block; padding: 2px 7px; border-radius: 4px; margin: 3px 0; }
+  .card-dept { font-size: 12px; color: #666; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-contact { font-size: 12px; color: #999; margin-top: 4px; }
+  .card-ext { display: inline-block; background: #f0f4ff; color: #3a5aa0; padding: 1px 6px; border-radius: 3px; font-size: 11px; margin-right: 4px; }
 
-.sidebar-search {
-  padding: 10px 12px;
-}
-.sidebar-search input {
-  width: 100%; padding: 7px 12px; background: rgba(255,255,255,0.10);
-  border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
-  font-size: 13px; color: #fff; font-family: inherit; outline: none;
-}
-.sidebar-search input::placeholder { color: rgba(255,255,255,0.4); }
+  /* 상세 모달 */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 14px; padding: 28px; width: 340px; max-width: 95vw; box-shadow: 0 8px 32px rgba(0,0,0,0.18); position: relative; }
+  .modal-close { position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 20px; cursor: pointer; color: #aaa; }
+  .modal-avatar { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; margin: 0 auto 12px; }
+  .modal-name { text-align: center; font-size: 20px; font-weight: 700; }
+  .modal-title { text-align: center; font-size: 13px; color: #666; margin-top: 4px; }
+  .modal-divider { border: none; border-top: 1px solid #eee; margin: 16px 0; }
+  .modal-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 14px; }
+  .modal-label { color: #999; width: 60px; flex-shrink: 0; font-size: 13px; }
+  .modal-value { color: #222; font-weight: 500; }
 
-.room-list { flex: 1; overflow-y: auto; }
-.room-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px; cursor: pointer; transition: background 0.1s;
-}
-.room-item:hover { background: rgba(255,255,255,0.07); }
-.room-item.active { background: rgba(255,255,255,0.13); }
-.room-avatar {
-  width: 38px; height: 38px; border-radius: 50%;
-  background: rgba(255,255,255,0.18); display: flex; align-items: center;
-  justify-content: center; font-size: 14px; font-weight: 600; color: #fff; flex-shrink: 0;
-}
-.room-avatar.group { border-radius: 10px; font-size: 16px; }
-.room-info { flex: 1; min-width: 0; }
-.room-name { font-size: 13px; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.room-last { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.room-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.room-time { font-size: 10px; color: rgba(255,255,255,0.4); }
-.unread-badge {
-  background: #e24b4a; color: #fff; font-size: 10px; font-weight: 700;
-  border-radius: 10px; padding: 1px 6px; min-width: 18px; text-align: center;
-}
+  /* 부서 모달 */
+  .dept-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 110; align-items: flex-start; justify-content: center; padding-top: 48px; }
+  .dept-modal-overlay.open { display: flex; }
+  .dept-modal { background: #fff; border-radius: 16px; width: 680px; max-width: 97vw; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; overflow: hidden; }
+  .dept-modal-header { padding: 20px 24px 14px; border-bottom: 1px solid #eee; flex-shrink: 0; }
+  .dept-modal-title { font-size: 19px; font-weight: 700; color: #1a2a5e; }
+  .dept-modal-sub { font-size: 13px; color: #888; margin-top: 3px; }
+  .dept-modal-close { position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 22px; cursor: pointer; color: #aaa; }
+  .dept-modal-body { overflow-y: auto; padding: 16px 24px 20px; }
+  .dept-section { margin-bottom: 18px; }
+  .dept-section-title { font-size: 13px; font-weight: 600; color: #4a6abf; background: #eef2ff; padding: 5px 10px; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .dept-section-title .cnt { background: #4a6abf; color: #fff; font-size: 11px; padding: 1px 6px; border-radius: 10px; }
+  .dept-member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 7px; }
+  .dept-member-card { background: #f8faff; border: 1px solid #e4eaf7; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.15s; }
+  .dept-member-card:hover { background: #e8eeff; border-color: #4a6abf; }
+  .dept-member-name { font-size: 14px; font-weight: 600; color: #222; }
+  .dept-member-info { font-size: 11px; color: #888; margin-top: 2px; }
+  .dept-member-ext { font-size: 11px; color: #4a6abf; margin-top: 1px; }
 
-.new-chat-btn {
-  margin: 10px 12px; padding: 9px; background: rgba(255,255,255,0.10);
-  border: 1px solid rgba(255,255,255,0.20); border-radius: 8px;
-  color: #fff; font-size: 13px; font-family: inherit; cursor: pointer; text-align: center;
-}
-.new-chat-btn:hover { background: rgba(255,255,255,0.18); }
+  /* ───── 조직도 탭 ───── */
+  #tab-tree { display: none; padding: 20px 16px 32px; }
+  .org-wrap { overflow-x: auto; overflow-y: visible; }
+  .org-chart-root { display: flex; flex-direction: column; align-items: center; min-width: max-content; padding: 12px 24px 32px; }
+  .org-box {
+    border: 1.5px solid #b0c0de; border-radius: 7px; padding: 7px 14px;
+    text-align: center; cursor: pointer; transition: all 0.15s;
+    background: #fff; white-space: nowrap;
+  }
+  .org-box:hover { box-shadow: 0 2px 10px rgba(26,58,92,0.18); }
+  .org-box.level-ceo   { background: #1a3a5c; color: #fff; border-color: #1a3a5c; min-width: 130px; }
+  .org-box.level-direct{ background: #c0392b; color: #fff; border-color: #96281b; min-width: 110px; }
+  .org-box.level-honbu { background: #2e5fa3; color: #fff; border-color: #2e5fa3; min-width: 110px; }
+  .org-box.level-cheo  { background: #e8eef8; border-color: #8fa8d0; color: #1a2a5e; }
+  .org-box.level-team  { background: #f4f7fd; border-color: #c8d4e8; color: #333; }
+  .org-box.highlight-tree { border-color: #f5a623 !important; box-shadow: 0 0 0 3px #f5a62340 !important; }
+  .box-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
+  .box-sub  { font-size: 11px; opacity: 0.8; margin-top: 2px; }
+  .member-list { background: #f4f7fd; border: 1px solid #d0daee; border-radius: 7px; padding: 5px 7px; min-width: 100px; }
+  .team-member { font-size: 11px; color: #444; padding: 2px 4px; border-radius: 3px; cursor: pointer; white-space: nowrap; display: block; }
+  .team-member:hover { background: #dde8f8; color: #1a3a5c; }
+  /* 연결선 */
+  .conn-v  { width: 2px; background: #b0c0de; flex-shrink: 0; }
+  .conn-h  { height: 2px; background: #b0c0de; flex-shrink: 0; }
+  .children-wrap { display: flex; flex-direction: column; align-items: center; }
+  .children-row  { display: flex; align-items: flex-start; position: relative; }
+  .child-col     { display: flex; flex-direction: column; align-items: center; }
+  .toggle-btn { font-size: 11px; color: #888; background: none; border: 1px solid #ddd; border-radius: 4px; padding: 2px 8px; cursor: pointer; margin-top: 4px; }
 
-/* 채팅 영역 */
-.chat-area { flex: 1; display: flex; flex-direction: column; background: #fff; min-width: 0; }
+  /* 빈 결과 */
+  .empty { text-align: center; padding: 60px 24px; color: #aaa; font-size: 15px; }
 
-.chat-header {
-  padding: 14px 20px; border-bottom: 1px solid #eee;
-  display: flex; align-items: center; gap: 12px; background: #fff;
-}
-.chat-header-avatar {
-  width: 38px; height: 38px; border-radius: 50%; background: #e8eef8;
-  display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #1a3a5c;
-}
-.chat-header-avatar.group { border-radius: 10px; }
-.chat-header-name { font-size: 16px; font-weight: 600; color: #111; }
-.chat-header-sub { font-size: 12px; color: #888; margin-top: 1px; }
-.online-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; display: inline-block; margin-right: 4px; }
-
-.messages-wrap { flex: 1; overflow-y: auto; padding: 20px 20px 10px; background: #f8f9fc; }
-.msg-date-divider { text-align: center; margin: 16px 0; }
-.msg-date-divider span { font-size: 11px; color: #aaa; background: #f8f9fc; padding: 2px 12px; border-radius: 10px; border: 1px solid #e8e8e8; }
-
-.msg-row { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 4px; }
-.msg-row.mine { flex-direction: row-reverse; }
-.msg-row.mine + .msg-row:not(.mine),
-.msg-row:not(.mine) + .msg-row.mine { margin-top: 12px; }
-
-.msg-avatar {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: #dde5f4; display: flex; align-items: center;
-  justify-content: center; font-size: 12px; font-weight: 600; color: #1a3a5c;
-  flex-shrink: 0; align-self: flex-start;
-}
-.msg-avatar.hidden { visibility: hidden; }
-.msg-content { max-width: 60%; }
-.msg-sender { font-size: 11px; color: #888; margin-bottom: 3px; padding-left: 2px; }
-.msg-bubble {
-  padding: 9px 13px; border-radius: 14px; font-size: 14px; line-height: 1.5;
-  background: #fff; border: 1px solid #e8e8e8; color: #111; word-break: break-word;
-  display: inline-block; max-width: 100%;
-}
-.msg-row.mine .msg-bubble { background: #1a3a5c; color: #fff; border-color: #1a3a5c; }
-.msg-time { font-size: 10px; color: #bbb; margin: 0 4px 2px; white-space: nowrap; }
-
-.chat-input-wrap {
-  padding: 12px 16px; border-top: 1px solid #eee; background: #fff;
-  display: flex; align-items: flex-end; gap: 10px;
-}
-.chat-input {
-  flex: 1; padding: 10px 14px; border: 1.5px solid #e0e4ef; border-radius: 22px;
-  font-size: 14px; font-family: inherit; resize: none; outline: none;
-  max-height: 120px; overflow-y: auto; line-height: 1.5;
-}
-.chat-input:focus { border-color: #1a3a5c; }
-.send-btn {
-  width: 40px; height: 40px; background: #1a3a5c; border: none; border-radius: 50%;
-  cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.send-btn:hover { background: #25527d; }
-.send-btn svg { width: 18px; height: 18px; fill: #fff; }
-.send-btn:disabled { background: #ccc; cursor: default; }
-.attach-btn {
-  width: 40px; height: 40px; background: #f0f2f5; border: none; border-radius: 50%;
-  cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  font-size: 18px;
-}
-.attach-btn:hover { background: #e0e4ef; }
-.file-preview-bar {
-  display: none; align-items: center; gap: 8px; padding: 8px 16px;
-  background: #f5f7ff; border-top: 1px solid #eee; font-size: 12px; color: #555;
-}
-.file-preview-bar.show { display: flex; }
-.file-preview-bar .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file-preview-bar .remove-file { cursor: pointer; color: #e24b4a; font-weight: 600; padding: 2px 6px; }
-.msg-file-img { max-width: 240px; max-height: 240px; border-radius: 10px; display: block; cursor: pointer; }
-.msg-file-doc {
-  display: flex; align-items: center; gap: 8px; padding: 8px 12px;
-  background: #f0f2f5; border-radius: 10px; text-decoration: none; color: #111; font-size: 13px;
-}
-.msg-row.mine .msg-file-doc { background: rgba(255,255,255,0.15); color: #fff; }
-.msg-file-doc .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
-
-/* 빈 화면 */
-.empty-chat {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; color: #ccc;
-}
-.empty-chat .icon { font-size: 48px; margin-bottom: 12px; }
-.empty-chat p { font-size: 15px; }
-
-/* 새 채팅 모달 */
-.modal-bg {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.35); z-index: 100;
-  align-items: center; justify-content: center;
-}
-.modal-bg.open { display: flex; }
-.modal {
-  background: #fff; border-radius: 14px; padding: 24px;
-  width: 380px; max-width: 95vw; max-height: 80vh;
-  display: flex; flex-direction: column; gap: 12px;
-}
-.modal h3 { font-size: 16px; font-weight: 600; }
-.modal input, .modal select {
-  width: 100%; padding: 9px 12px; border: 1.5px solid #e0e4ef;
-  border-radius: 8px; font-size: 14px; font-family: inherit; outline: none;
-}
-.modal input:focus { border-color: #1a3a5c; }
-.user-pick-list { flex: 1; overflow-y: auto; max-height: 260px; border: 1px solid #eee; border-radius: 8px; }
-.user-pick-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 9px 12px; cursor: pointer; transition: background 0.1s;
-}
-.user-pick-item:hover { background: #f5f7ff; }
-.user-pick-item.selected { background: #e8eef8; }
-.pick-avatar {
-  width: 32px; height: 32px; border-radius: 50%; background: #dde5f4;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 600; color: #1a3a5c; flex-shrink: 0;
-}
-.pick-name { font-size: 14px; font-weight: 500; }
-.pick-dept { font-size: 11px; color: #888; }
-.check-mark { margin-left: auto; color: #1a3a5c; font-size: 16px; display: none; }
-.user-pick-item.selected .check-mark { display: block; }
-.modal-btns { display: flex; gap: 8px; }
-.modal-btns button {
-  flex: 1; padding: 10px; border-radius: 8px; font-size: 14px;
-  font-family: inherit; cursor: pointer; font-weight: 500;
-}
-.btn-cancel { background: #f5f5f5; border: none; color: #555; }
-.btn-confirm { background: #1a3a5c; border: none; color: #fff; }
-.btn-confirm:hover { background: #25527d; }
-
-/* 온라인 사용자 목록 탭 */
-.online-list { flex: 1; overflow-y: auto; }
-.online-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px; cursor: pointer;
-}
-.online-item:hover { background: rgba(255,255,255,0.07); }
-.online-name { font-size: 13px; color: #fff; }
-.online-dept { font-size: 11px; color: rgba(255,255,255,0.5); }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.status-dot.online { background: #22c55e; }
-.status-dot.offline { background: #888; }
-
-@media (max-width: 600px) {
-  .sidebar { width: 72px; min-width: 72px; }
-  .sidebar-header h1, .me-name, .me-dept, .logout-btn,
-  .room-info, .room-meta, .sidebar-search, .stab span,
-  .new-chat-btn { display: none; }
-  .room-item { justify-content: center; padding: 10px 0; }
-  .stab { padding: 10px 0; }
-}
+  /* 인쇄 */
+  @media print {
+    .tabs, .search-bar, .modal-overlay { display: none !important; }
+    .person-grid { grid-template-columns: repeat(3, 1fr); }
+  }
 </style>
 </head>
 <body>
 
-<!-- 로그인 -->
-<div id="login-screen">
-  <div class="login-box">
-    <div class="login-logo"><span>의</span></div>
-    <h2>의왕도시공사 메신저</h2>
-    <p>이름을 입력하고 접속하세요</p>
-    <input type="text" id="login-name" placeholder="이름 (예: 홍길동)" maxlength="10" />
-    <select id="login-dept">
-      <option value="">부서 불러오는 중...</option>
-    </select>
-    <button class="login-btn" onclick="doLogin()">접속하기</button>
-    <div class="login-err" id="login-err"></div>
+<div class="header">
+  <div>
+    <div class="header h1" style="font-size:18px;font-weight:600;">의왕도시공사 조직도</div>
+    <div class="subtitle">2026년 6월 8일 기준</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <div style="font-size:12px;opacity:0.6;">총 <span id="total-count">0</span>명</div>
+    <a href="chat.html" target="_blank" style="background:rgba(255,255,255,0.15);color:#fff;text-decoration:none;font-size:13px;font-weight:600;padding:7px 14px;border-radius:8px;">💬 메신저</a>
   </div>
 </div>
 
-<!-- 메인 앱 -->
-<div id="app">
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <h1>💬 의왕 메신저</h1>
-      <div class="me-info">
-        <div style="position:relative;cursor:pointer;" onclick="openStatusPicker()">
-          <div class="me-avatar" id="me-avatar"></div>
-          <span id="my-status-dot" style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#22c55e;border:2px solid #1a3a5c;"></span>
-        </div>
-        <div style="flex:1;min-width:0;cursor:pointer;" onclick="openStatusPicker()">
-          <div class="me-name" id="me-name-disp"></div>
-          <div id="my-status-label" style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:1px;">온라인</div>
-        </div>
-        <button class="logout-btn" id="notif-btn" onclick="toggleNotification()" title="알림 설정">🔔</button>
-        <button class="logout-btn" onclick="doLogout()">로그아웃</button>
-      </div>
-    </div>
-    <div class="sidebar-tabs">
-      <div class="stab active" onclick="switchSTab('chats')" id="stab-chats"><span>채팅</span></div>
-      <div class="stab" onclick="switchSTab('online')" id="stab-online"><span>전체</span></div>
-    </div>
-    <div class="sidebar-search">
-      <input type="text" placeholder="검색..." id="room-search" oninput="filterRooms()" />
-    </div>
-    <div class="room-list" id="room-list"></div>
-    <div class="online-list" id="online-list" style="display:none;"></div>
-    <button class="new-chat-btn" onclick="openNewChat()">+ 새 채팅 / 단체방</button>
-    <button class="new-chat-btn" onclick="testNotif()" style="margin-top:4px;background:rgba(255,200,0,0.15);border-color:rgba(255,200,0,0.3);font-size:11px;">🧪 알림 테스트</button>
-  </div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('list')">👤 인명 검색</div>
+  <div class="tab" onclick="switchTab('tree')">🌳 조직도 보기</div>
+</div>
 
-  <div class="chat-area" id="chat-area">
-    <div class="empty-chat" id="empty-chat">
-      <div class="icon">💬</div>
-      <p>채팅방을 선택하거나 새 채팅을 시작하세요</p>
+<div class="search-bar">
+  <div class="search-input-wrap">
+    <input type="text" id="searchInput" placeholder="이름, 부서, 직급으로 검색..." oninput="doSearch()" />
+    <button class="clear-btn" onclick="clearSearch()">×</button>
+  </div>
+  <select class="filter-select" id="filterHonbu" onchange="doSearch()">
+    <option value="">전체 본부</option>
+  </select>
+  <select class="filter-select" id="filterTeam" onchange="doSearch()">
+    <option value="">전체 팀</option>
+  </select>
+  <select class="filter-select" id="filterGrade" onchange="doSearch()">
+    <option value="">전체 직급</option>
+    <option>임원급</option><option>팀장급</option>
+    <option>1급</option><option>2급</option><option>3급</option>
+    <option>4급</option><option>5급</option><option>6급</option><option>7급</option>
+    <option>공무직</option><option>계약직</option>
+  </select>
+  <span class="result-count" id="resultCount"></span>
+</div>
+
+<div id="tab-list">
+  <div class="person-grid" id="personGrid"></div>
+  <div class="empty" id="emptyMsg" style="display:none;">검색 결과가 없습니다.</div>
+</div>
+
+<div id="tab-tree">
+  <div class="org-wrap" id="orgWrap"></div>
+</div>
+
+<!-- 상세 모달 -->
+<!-- 부서 인원 모달 -->
+<div class="dept-modal-overlay" id="deptModal" onclick="closeDeptModal(event)">
+  <div class="dept-modal">
+    <button class="dept-modal-close" onclick="closeDeptModal()">×</button>
+    <div class="dept-modal-header">
+      <div class="dept-modal-title" id="dm-title"></div>
+      <div class="dept-modal-sub" id="dm-sub"></div>
     </div>
-    <div id="chat-main" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
-      <div class="chat-header">
-        <div class="chat-header-avatar" id="ch-avatar"></div>
-        <div style="flex:1;">
-          <div class="chat-header-name" id="ch-name"></div>
-          <div class="chat-header-sub" id="ch-sub"></div>
-        </div>
-        <button onclick="leaveRoom()" style="background:none;border:1px solid #ffcccc;color:#e24b4a;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;">나가기 🚪</button>
-      </div>
-      <div class="messages-wrap" id="messages-wrap"></div>
-      <div class="file-preview-bar" id="file-preview-bar">
-        <span class="name" id="file-preview-name"></span>
-        <span class="remove-file" onclick="clearSelectedFile()">✕</span>
-      </div>
-      <div class="chat-input-wrap">
-        <input type="file" id="file-input" style="display:none;" onchange="handleFileSelect(event)" />
-        <button class="attach-btn" onclick="document.getElementById('file-input').click()" title="파일 첨부">📎</button>
-        <textarea class="chat-input" id="chat-input" placeholder="메시지 입력... (Enter: 전송, Shift+Enter: 줄바꿈)" rows="1"
-          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <button class="send-btn" onclick="sendMessage()" id="send-btn">
-          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-        </button>
-      </div>
-    </div>
+    <div class="dept-modal-body" id="dm-body"></div>
   </div>
 </div>
 
-<!-- 새 채팅 모달 -->
-<div class="modal-bg" id="modal-bg" onclick="closeModal(event)">
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
   <div class="modal">
-    <h3>새 채팅 시작</h3>
-    <input type="text" id="modal-search" placeholder="이름으로 검색..." oninput="filterModalUsers()" />
-    <div class="user-pick-list" id="user-pick-list"></div>
-    <div style="font-size:12px; color:#888; margin-top:4px;">
-      선택된 인원: <span id="selected-count">0</span>명
-      &nbsp;|&nbsp; 2명 이상 선택 시 단체방
-    </div>
-    <div id="group-name-wrap" style="display:none; margin-top:6px;">
-      <input type="text" id="group-name-input" placeholder="단체방 이름 입력 (예: 안전팀 단톡)" style="width:100%;padding:9px 12px;border:1.5px solid #e0e4ef;border-radius:8px;font-size:14px;font-family:inherit;outline:none;" />
-    </div>
-    <div class="modal-btns">
-      <button class="btn-cancel" onclick="closeModal()">취소</button>
-      <button class="btn-confirm" onclick="startChat()">채팅 시작</button>
-    </div>
-  </div>
-</div>
-
-<!-- 상태 설정 모달 -->
-<div id="status-modal-bg" onclick="closeStatusModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:200;">
-  <div id="status-modal-content" onclick="event.stopPropagation()" style="background:#fff;border-radius:14px;padding:20px;width:300px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-avatar" id="m-avatar"></div>
+    <div class="modal-name" id="m-name"></div>
+    <div class="modal-title" id="m-title"></div>
+    <hr class="modal-divider">
+    <div class="modal-row"><span class="modal-label">소속</span><span class="modal-value" id="m-dept"></span></div>
+    <div class="modal-row"><span class="modal-label">직급</span><span class="modal-value" id="m-grade"></span></div>
+    <div class="modal-row"><span class="modal-label">내선</span><span class="modal-value" id="m-ext"></span></div>
+    <div class="modal-row"><span class="modal-label">휴대폰</span><span class="modal-value" id="m-phone"></span></div>
+    <button id="m-chat-btn" onclick="goChat()" style="width:100%;margin-top:16px;padding:10px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">💬 메신저로 채팅하기</button>
   </div>
 </div>
 
 <script>
-const SUPABASE_URL = 'https://qiwqcylerloqxdqupgbk.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpd3FjeWxlcmxvcXhkcXVwZ2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MTQxMzMsImV4cCI6MjA3NDk5MDEzM30.haR8oLJsgp_5r-EisNqxI8ASHrdh87hiAixfMt5TG6U';
-const H = { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+// ══════════════════════════════════════════════════
+//  📋 데이터 — 내일 이 부분만 교체하면 됩니다!
+//  형식: { name, grade, title, honbu, cheo, team, ext, phone }
+// ══════════════════════════════════════════════════
+const DATA = [
+  { name:'노성화', grade:'임원급', title:'사장', honbu:'임원', cheo:'임원', team:'임원실', ext:'7300', phone:'-' },
+  { name:'김신', grade:'임원급', title:'본부장(상임이사)', honbu:'경영사업본부', cheo:'경영사업본부', team:'경영사업본부', ext:'7306', phone:'010-6252-1991' },
+  { name:'정두식', grade:'임원급', title:'본부장(상임이사)', honbu:'개발사업본부', cheo:'개발사업본부', team:'개발사업본부', ext:'7307', phone:'010-3165-3356' },
+  { name:'박성호', grade:'임원급', title:'실장(1급)', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획홍보실', ext:'7310', phone:'010-8776-5757' },
+  { name:'송태석', grade:'임원급', title:'처장(2급)', honbu:'경영사업본부', cheo:'경영지원처', team:'경영지원처', ext:'7383', phone:'010-3788-4714' },
+  { name:'임규택', grade:'임원급', title:'처장(1급)', honbu:'경영사업본부', cheo:'생활체육처', team:'생활체육처', ext:'7329', phone:'010-8812-5348' },
+  { name:'김대진', grade:'임원급', title:'직무대행(처장)', honbu:'개발사업본부', cheo:'개발사업처', team:'사업기획팀', ext:'7344', phone:'010-2108-2233' },
+  { name:'최재경', grade:'임원급', title:'처장(2급)', honbu:'개발사업본부', cheo:'교통레저처', team:'교통레저처', ext:'7445', phone:'010-4462-0106' },
+  { name:'홍미구', grade:'팀장급', title:'팀장(2급)', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7386', phone:'010-3628-2141' },
+  { name:'허재희', grade:'4급', title:'일반4급', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7381', phone:'010-5293-1260' },
+  { name:'서정욱', grade:'5급', title:'일반5급', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7332', phone:'010-4021-8364' },
+  { name:'최정범', grade:'5급', title:'일반5급', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7382', phone:'010-4136-7293' },
+  { name:'조지영', grade:'6급', title:'일반6급', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7326', phone:'010-5320-3949' },
+  { name:'이영진', grade:'7급', title:'일반7급', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7327', phone:'010-6626-5602' },
+  { name:'안지현', grade:'7급', title:'일반7급', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7362', phone:'010-9321-1134' },
+  { name:'김태진', grade:'공무직', title:'공무직', honbu:'안전감사팀', cheo:'안전감사팀', team:'안전감사팀', ext:'7349', phone:'010-8098-3019' },
+  { name:'송수경', grade:'팀장급', title:'팀장(3급)', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획법무팀', ext:'7380', phone:'010-6353-7126' },
+  { name:'이 혁', grade:'4급', title:'일반4급', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획법무팀', ext:'7323', phone:'010-5653-5511' },
+  { name:'권은경', grade:'4급', title:'일반4급', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획법무팀', ext:'7322', phone:'010-9093-1503' },
+  { name:'최예인', grade:'5급', title:'일반5급', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획법무팀', ext:'7328', phone:'010-4145-8896' },
+  { name:'정민규', grade:'5급', title:'일반5급', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획법무팀', ext:'7319', phone:'010-8010-5857' },
+  { name:'김서연A', grade:'6급', title:'일반6급', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획법무팀', ext:'7316', phone:'010-3427-5084' },
+  { name:'황다연', grade:'계약직', title:'계약직', honbu:'기획홍보실', cheo:'기획홍보실', team:'기획법무팀', ext:'7353', phone:'010-2596-5024' },
+  { name:'김민주', grade:'팀장급', title:'팀장(3급)', honbu:'기획홍보실', cheo:'기획홍보실', team:'성과평가팀', ext:'7325', phone:'010-7391-5004' },
+  { name:'김현준', grade:'3급', title:'일반3급', honbu:'기획홍보실', cheo:'기획홍보실', team:'성과평가팀', ext:'7355', phone:'010-4628-6493' },
+  { name:'박고훈', grade:'6급', title:'일반6급', honbu:'기획홍보실', cheo:'기획홍보실', team:'성과평가팀', ext:'7318', phone:'010-5037-3828' },
+  { name:'박현준B', grade:'7급', title:'일반7급', honbu:'기획홍보실', cheo:'기획홍보실', team:'성과평가팀', ext:'7384', phone:'010-2395-1885' },
+  { name:'임길택', grade:'팀장급', title:'팀장(2급)', honbu:'기획홍보실', cheo:'기획홍보실', team:'고객홍보팀', ext:'7308', phone:'010-7338-8375' },
+  { name:'류재선', grade:'4급', title:'일반4급', honbu:'기획홍보실', cheo:'기획홍보실', team:'고객홍보팀', ext:'7303', phone:'010-9399-5433' },
+  { name:'최윤정', grade:'6급', title:'일반6급', honbu:'기획홍보실', cheo:'기획홍보실', team:'고객홍보팀', ext:'7458', phone:'010-4754-2735' },
+  { name:'문채이', grade:'7급', title:'일반(운영)7급', honbu:'기획홍보실', cheo:'기획홍보실', team:'고객홍보팀', ext:'7317', phone:'010-9246-2772' },
+  { name:'김동언', grade:'팀장급', title:'팀장(2급)', honbu:'경영사업본부', cheo:'경영지원처', team:'인사노무팀', ext:'7330', phone:'010-5323-1253' },
+  { name:'정난영', grade:'3급', title:'일반3급', honbu:'경영사업본부', cheo:'경영지원처', team:'인사노무팀', ext:'7331', phone:'010-4846-9058' },
+  { name:'이혜정', grade:'4급', title:'일반4급', honbu:'경영사업본부', cheo:'경영지원처', team:'인사노무팀', ext:'7334', phone:'010-4615-1155' },
+  { name:'이선미', grade:'4급', title:'일반4급', honbu:'경영사업본부', cheo:'경영지원처', team:'인사노무팀', ext:'7335', phone:'010-8737-4879' },
+  { name:'박현식', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'경영지원처', team:'인사노무팀', ext:'7336', phone:'010-9167-9026' },
+  { name:'김영진', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'경영지원처', team:'인사노무팀', ext:'7342', phone:'010-4071-0051' },
+  { name:'이현준', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'경영지원처', team:'인사노무팀', ext:'7321', phone:'010-9566-5546' },
+  { name:'임회진', grade:'팀장급', title:'팀장(2급)', honbu:'경영사업본부', cheo:'경영지원처', team:'재무회계팀', ext:'7311', phone:'010-8328-1792' },
+  { name:'박인성', grade:'4급', title:'일반4급', honbu:'경영사업본부', cheo:'경영지원처', team:'재무회계팀', ext:'7312', phone:'010-9990-7033' },
+  { name:'송주연', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'경영지원처', team:'재무회계팀', ext:'7313', phone:'010-2021-4391' },
+  { name:'허재원', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'경영지원처', team:'재무회계팀', ext:'7315', phone:'010-2009-5985' },
+  { name:'김지연', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'경영지원처', team:'재무회계팀', ext:'7314', phone:'010-3381-0180' },
+  { name:'조종배', grade:'팀장급', title:'팀장(3급)', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'7320', phone:'010-5425-1009' },
+  { name:'성민철', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'7324', phone:'010-5463-6943' },
+  { name:'박상훈', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'7333', phone:'010-9113-9311' },
+  { name:'안다영', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'7338', phone:'010-4054-7630' },
+  { name:'김성국', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'7343', phone:'010-4339-0620' },
+  { name:'이아름', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'7304', phone:'010-6205-5006' },
+  { name:'김민규', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'7305', phone:'010-4231-8856' },
+  { name:'손점숙', grade:'계약직', title:'계약직', honbu:'경영사업본부', cheo:'경영지원처', team:'총무전산팀', ext:'-', phone:'010-6710-5788' },
+  { name:'최유미', grade:'팀장급', title:'팀장(2급)', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7420', phone:'010-5349-1836' },
+  { name:'이동학', grade:'3급', title:'일반3급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7426', phone:'010-5156-0817' },
+  { name:'고화종', grade:'4급', title:'일반4급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7423', phone:'010-2268-5400' },
+  { name:'연경은', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7425', phone:'010-9338-8115' },
+  { name:'차재준', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7495', phone:'010-4906-3790' },
+  { name:'고소연', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7477', phone:'010-5645-1027' },
+  { name:'이필현', grade:'4급', title:'일반4급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7422', phone:'010-3254-8078' },
+  { name:'김광선', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7439', phone:'010-9411-3343' },
+  { name:'박현석', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7438', phone:'010-7658-7690' },
+  { name:'이인숙', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7430, 7434', phone:'010-5479-0368' },
+  { name:'최정님', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7430, 7434', phone:'010-9904-9214' },
+  { name:'한진영', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7430, 7434', phone:'010-2354-9975' },
+  { name:'이송희', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7466', phone:'010-2775-5786' },
+  { name:'김재현', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7435', phone:'010-5524-0058' },
+  { name:'김기호', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7421', phone:'010-3123-0736' },
+  { name:'최윤경', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7408', phone:'010-4715-6734' },
+  { name:'진현수', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7432', phone:'010-9962-5410' },
+  { name:'임태홍', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7409', phone:'010-4194-1497' },
+  { name:'이지혜', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7436', phone:'010-3617-9861' },
+  { name:'석주현', grade:'계약직', title:'계약직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7436', phone:'010-5478-8247' },
+  { name:'김슬기', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7424', phone:'010-4111-0657' },
+  { name:'한미라', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7437', phone:'010-9102-2732' },
+  { name:'문인영', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7437', phone:'010-2226-8191' },
+  { name:'윤상현', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7424', phone:'010-4334-5285' },
+  { name:'김미란', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7437', phone:'010-4340-9106' },
+  { name:'김동년', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'7424', phone:'010-9363-0744' },
+  { name:'송영도', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'425-1991', phone:'010-4555-3257' },
+  { name:'최광희', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'국민체육센터팀', ext:'425-1991', phone:'010-3363-1217' },
+  { name:'김주희', grade:'팀장급', title:'팀장(3급)', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7396', phone:'010-8312-2859' },
+  { name:'장신호', grade:'4급', title:'일반4급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7394', phone:'010-2012-2515' },
+  { name:'조선미', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7393', phone:'010-4841-2198' },
+  { name:'최기태', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7395', phone:'010-8899-8312' },
+  { name:'황인선', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7398', phone:'010-2563-0074' },
+  { name:'정지혜', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7397', phone:'010-3879-4391' },
+  { name:'신성욱', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7377', phone:'010-5375-2525' },
+  { name:'진선웅', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7379', phone:'010-4740-2963' },
+  { name:'천재민', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7378', phone:'010-9549-2672' },
+  { name:'김은숙', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7390, 7391', phone:'010-5452-9549' },
+  { name:'정진영', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7390, 7391', phone:'010-7146-2273' },
+  { name:'박지호', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7390, 7391', phone:'010-3111-7074' },
+  { name:'송문석', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7460', phone:'010-8634-7989' },
+  { name:'원수진', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7464', phone:'010-6227-1556' },
+  { name:'김택승', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7465', phone:'010-2218-2308' },
+  { name:'정희경', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7365', phone:'010-2536-7015' },
+  { name:'정민수', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7456', phone:'010-8926-4643' },
+  { name:'맹설아', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7457', phone:'010-6281-4223' },
+  { name:'최문석', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7366', phone:'010-5153-8799' },
+  { name:'박철종', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7366', phone:'010-8576-4151' },
+  { name:'이호열', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7366', phone:'010-3369-9004' },
+  { name:'정수연', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7358', phone:'010-2890-1770' },
+  { name:'안정원', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7358', phone:'010-2646-3883' },
+  { name:'신은미', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'7358', phone:'010-4285-3234' },
+  { name:'김은종', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'461-5395', phone:'010-3664-3014' },
+  { name:'이지헌', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'461-5395', phone:'010-7739-5177' },
+  { name:'임종영', grade:'계약직', title:'계약직', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'-', phone:'010-5246-0193' },
+  { name:'이정재', grade:'계약직', title:'계약직', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'-', phone:'010-8531-6829' },
+  { name:'박현준A', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'부곡스포츠센터팀', ext:'461-5395', phone:'010-5425-1033' },
+  { name:'원재웅', grade:'팀장급', title:'팀장(3급)', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8010', phone:'010-8317-2277' },
+  { name:'김종황', grade:'3급', title:'일반3급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8011', phone:'010-9250-8647' },
+  { name:'김명동', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8012', phone:'010-2273-8967' },
+  { name:'김성욱', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8013', phone:'010-2323-0333' },
+  { name:'송아름', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8014', phone:'010-3310-2136' },
+  { name:'나지영', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8015', phone:'010-5463-9001' },
+  { name:'최태웅', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8016', phone:'010-3363-0213' },
+  { name:'우정원', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8018', phone:'010-2757-6783' },
+  { name:'김윤섭', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8019', phone:'010-9164-6669' },
+  { name:'우성주', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8021', phone:'010-2124-6885' },
+  { name:'변동민', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8000~1', phone:'010-3641-7452' },
+  { name:'송인숙', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8000~1', phone:'010-7356-0613' },
+  { name:'김옥자', grade:'계약직', title:'계약직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8000~1', phone:'010-8588-6926' },
+  { name:'송수진', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8003', phone:'010-8954-7126' },
+  { name:'양지혜', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8003', phone:'010-7361-0328' },
+  { name:'양성군', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8002', phone:'010-4574-7015' },
+  { name:'김주희', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8002', phone:'010-9914-1607' },
+  { name:'김동혁', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8007', phone:'010-9755-5208' },
+  { name:'지원석', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8006', phone:'010-2973-4960' },
+  { name:'조소영', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8030~1', phone:'010-9977-5126' },
+  { name:'이지원', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8030~1', phone:'010-9467-1056' },
+  { name:'이옥경', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8008', phone:'010-3494-6424' },
+  { name:'박민철', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8009', phone:'010-5540-2917' },
+  { name:'장현우', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8009', phone:'010-5886-4096' },
+  { name:'조미정', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8008', phone:'010-4494-2625' },
+  { name:'전여진', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8008', phone:'010-2312-5357' },
+  { name:'김팽선', grade:'계약직', title:'촉탁직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'8045-8009', phone:'010-5222-2889' },
+  { name:'신영길', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'477-4636', phone:'010-6209-6688' },
+  { name:'이준희', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'477-4636', phone:'010-9940-6424' },
+  { name:'김민영B', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'백운스포츠센터팀', ext:'7407', phone:'010-5488-0527' },
+  { name:'김희용', grade:'팀장급', title:'팀장(2급)', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8050', phone:'010-6651-3079' },
+  { name:'우동구', grade:'4급', title:'일반4급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8051', phone:'010-5056-1016' },
+  { name:'김병규', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8055', phone:'010-6483-2520' },
+  { name:'정기훈', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8052', phone:'010-5745-2992' },
+  { name:'박승지', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8054', phone:'010-3362-1781' },
+  { name:'심헌용', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8053', phone:'010-6870-1992' },
+  { name:'박예진', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8060~1', phone:'010-6271-1063' },
+  { name:'장은영', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8060~1', phone:'010-8784-4805' },
+  { name:'최현아', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8060~1', phone:'010-3429-0409' },
+  { name:'심재훈', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8056', phone:'010-3658-5796' },
+  { name:'남준우', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8062', phone:'010-8271-7476' },
+  { name:'주서윤', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8063', phone:'010-9449-9003' },
+  { name:'지남희', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8064', phone:'010-9043-0532' },
+  { name:'류세훈', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8056', phone:'010-9149-7385' },
+  { name:'오치상', grade:'5급', title:'일반5급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8072', phone:'010-7159-7373' },
+  { name:'김영대', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8075', phone:'010-3144-5598' },
+  { name:'김상진', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8074', phone:'010-9232-5650' },
+  { name:'이윤식', grade:'6급', title:'일반6급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8073', phone:'010-5391-8841' },
+  { name:'오창수', grade:'7급', title:'일반7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8076', phone:'010-7443-3036' },
+  { name:'김다희', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8000~1', phone:'010-4804-5209' },
+  { name:'윤연옥', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8070~1', phone:'010-9188-7601' },
+  { name:'최현석', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8070~1', phone:'010-7159-5619' },
+  { name:'변경순', grade:'계약직', title:'계약직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8070~1', phone:'010-9168-7823' },
+  { name:'윤소라', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8078', phone:'010-5058-6314' },
+  { name:'박중현', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8077', phone:'010-8977-8732' },
+  { name:'최해영', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8067', phone:'010-9957-1604' },
+  { name:'유정숙', grade:'7급', title:'일반(운영)7급', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8067', phone:'010-8972-7936' },
+  { name:'김종일', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8066', phone:'010-2750-2612' },
+  { name:'양명임', grade:'공무직', title:'공무직', honbu:'경영사업본부', cheo:'생활체육처', team:'포일스포츠센터팀', ext:'8045-8067', phone:'010-2433-4565' },
+  { name:'김대진', grade:'팀장급', title:'팀장(2급)', honbu:'개발사업본부', cheo:'개발사업처', team:'사업기획팀', ext:'7344', phone:'010-2108-2233' },
+  { name:'김지유', grade:'4급', title:'일반4급', honbu:'개발사업본부', cheo:'개발사업처', team:'사업기획팀', ext:'7341', phone:'010-6215-7759' },
+  { name:'박대한', grade:'4급', title:'일반4급', honbu:'개발사업본부', cheo:'개발사업처', team:'사업기획팀', ext:'7369', phone:'010-3117-9667' },
+  { name:'박대원', grade:'6급', title:'일반6급', honbu:'개발사업본부', cheo:'개발사업처', team:'사업기획팀', ext:'7347', phone:'010-3062-3534' },
+  { name:'정진원', grade:'팀장급', title:'팀장(3급)', honbu:'개발사업본부', cheo:'개발사업처', team:'개발사업팀', ext:'7351', phone:'010-5091-2632' },
+  { name:'나병진', grade:'3급', title:'일반3급', honbu:'개발사업본부', cheo:'개발사업처', team:'개발사업팀', ext:'7348', phone:'010-4579-0111' },
+  { name:'황보형', grade:'4급', title:'일반4급', honbu:'개발사업본부', cheo:'개발사업처', team:'개발사업팀', ext:'7357', phone:'010-2773-2987' },
+  { name:'이진한', grade:'5급', title:'일반 5급', honbu:'개발사업본부', cheo:'개발사업처', team:'개발사업팀', ext:'7368', phone:'010-6290-8707' },
+  { name:'황병만', grade:'팀장급', title:'팀장(3급)', honbu:'개발사업본부', cheo:'개발사업처', team:'건설사업팀', ext:'7350', phone:'010-7272-4877' },
+  { name:'안광욱', grade:'4급', title:'일반4급', honbu:'개발사업본부', cheo:'개발사업처', team:'건설사업팀', ext:'7354', phone:'010-4644-3171' },
+  { name:'박준표', grade:'6급', title:'일반6급', honbu:'개발사업본부', cheo:'개발사업처', team:'건설사업팀', ext:'7356', phone:'010-9044-9511' },
+  { name:'김예지', grade:'7급', title:'일반7급', honbu:'개발사업본부', cheo:'개발사업처', team:'건설사업팀', ext:'7364', phone:'010-4605-8195' },
+  { name:'김창균', grade:'팀장급', title:'팀장(1급)', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7448', phone:'010-6491-4186' },
+  { name:'김인철', grade:'4급', title:'일반4급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7441', phone:'010-4781-3737' },
+  { name:'이라현', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7361', phone:'010-9314-2294' },
+  { name:'김상운', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'-', phone:'010-3369-4241' },
+  { name:'김영광', grade:'6급', title:'일반6급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7442', phone:'010-7132-5563' },
+  { name:'하현수', grade:'6급', title:'일반6급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7363', phone:'010-6212-8056' },
+  { name:'지명국', grade:'7급', title:'일반7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7387', phone:'010-6797-1733' },
+  { name:'조영길', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-4450-3569' },
+  { name:'이효진', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-4472-7763' },
+  { name:'이상면', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-8728-6424' },
+  { name:'조명호', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-9722-7639' },
+  { name:'박영찬', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-4717-7567' },
+  { name:'김용상', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-2580-0054' },
+  { name:'박동욱', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-5696-7616' },
+  { name:'정호준', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7440', phone:'010-4618-4687' },
+  { name:'송영필', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'-', phone:'010-4199-2735' },
+  { name:'이란영', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7469', phone:'010-8865-5076' },
+  { name:'이소연', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7472', phone:'010-7136-4555' },
+  { name:'김가희', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7471', phone:'010-4776-9607' },
+  { name:'최우영', grade:'계약직', title:'단시간계약직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7480', phone:'010-5167-2816' },
+  { name:'김종삼', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7476', phone:'010-9245-2573' },
+  { name:'이충규', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7473, 7474', phone:'010-6701-0024' },
+  { name:'최정용', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7473, 7474', phone:'010-9069-8440' },
+  { name:'현명호', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7473, 7474', phone:'010-4153-3356' },
+  { name:'송민호', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7473, 7474', phone:'010-9018-3171' },
+  { name:'권오철', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7473, 7474', phone:'010-8777-5725' },
+  { name:'김진기', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7473, 7474', phone:'010-4693-0658' },
+  { name:'최정희', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7473, 7474', phone:'010-6201-4986' },
+  { name:'김주영A', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7444', phone:'010-3600-5554' },
+  { name:'김주영B', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'교통시설팀', ext:'7479', phone:'010-5675-1824' },
+  { name:'최재선', grade:'팀장급', title:'팀장(2급)', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7486', phone:'010-3525-6083' },
+  { name:'김종훈', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7470', phone:'010-6397-1975' },
+  { name:'이재건', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7370', phone:'010-8981-9512' },
+  { name:'김형주', grade:'7급', title:'일반7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7453', phone:'010-6217-3092' },
+  { name:'박덕열', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7483', phone:'010-8947-1367' },
+  { name:'표성순', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7482', phone:'010-6739-5875' },
+  { name:'정환필', grade:'계약직', title:'단시간계약직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7482', phone:'010-5679-5661' },
+  { name:'이오순', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7499', phone:'010-3790-3983' },
+  { name:'류재경', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7499', phone:'010-3459-9612' },
+  { name:'이경옥', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7499', phone:'010-7788-2351' },
+  { name:'최규호', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7498', phone:'010-4825-7781' },
+  { name:'전정호', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7498', phone:'010-3340-8435' },
+  { name:'김정현', grade:'계약직', title:'촉탁직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7499', phone:'010-8004-6753' },
+  { name:'조명연', grade:'계약직', title:'계약직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7498', phone:'010-8213-8159' },
+  { name:'홍상교', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7482', phone:'010-8850-2564' },
+  { name:'신승환', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7482', phone:'010-3175-3387' },
+  { name:'강영구', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7482', phone:'010-6890-0901' },
+  { name:'오승석', grade:'4급', title:'일반4급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7492', phone:'010-2087-9648' },
+  { name:'김재훈', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7493', phone:'010-7689-0164' },
+  { name:'양종석', grade:'6급', title:'일반6급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7491', phone:'010-5653-9645' },
+  { name:'김선일', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7492', phone:'010-9448-2659' },
+  { name:'김설화', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'-', phone:'010-2654-5145' },
+  { name:'송도석', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7455', phone:'010-2477-3999' },
+  { name:'민지빈', grade:'7급', title:'일반7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7452', phone:'010-7902-1031' },
+  { name:'조영해', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7451', phone:'010-5077-5418' },
+  { name:'이상민A', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7388', phone:'010-3913-4578' },
+  { name:'이상민B', grade:'계약직', title:'촉탁직', honbu:'개발사업본부', cheo:'교통레저처', team:'바라산휴양림팀', ext:'7498', phone:'010-5315-4136' },
+  { name:'황의철', grade:'팀장급', title:'팀장(3급)', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7385', phone:'010-9644-7916' },
+  { name:'김승조', grade:'3급', title:'일반3급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7374', phone:'010-6423-1108' },
+  { name:'이성일', grade:'4급', title:'일반4급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7373', phone:'010-5125-0409' },
+  { name:'우진석', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7346', phone:'010-5391-4467' },
+  { name:'서미경', grade:'5급', title:'일반5급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7454', phone:'010-3036-3478' },
+  { name:'차제희', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7467', phone:'010-4260-8803' },
+  { name:'이정인', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7371, 7376', phone:'010-2364-0320' },
+  { name:'이순희', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-6243-8945' },
+  { name:'신성우', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-6474-3531' },
+  { name:'김기주', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-2383-4420' },
+  { name:'김효순', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-3657-4395' },
+  { name:'박은미', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-8818-8317' },
+  { name:'박재부', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-4300-6472' },
+  { name:'박준영', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7371, 7376', phone:'010-3080-1247' },
+  { name:'심유석', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7371, 7376', phone:'010-4285-1959' },
+  { name:'이건성', grade:'계약직', title:'계약직', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7372', phone:'010-4712-8819' },
+  { name:'이해진', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-4517-9135' },
+  { name:'오범석', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-8998-2725' },
+  { name:'최성우', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-3080-5038' },
+  { name:'조성회', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-9538-2532' },
+  { name:'양성수', grade:'공무직', title:'공무직', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'-', phone:'010-3155-3343' },
+  { name:'김민영A', grade:'7급', title:'일반(운영)7급', honbu:'개발사업본부', cheo:'교통레저처', team:'왕송호수레저팀', ext:'7371, 7376', phone:'010-8708-2224' },
+];
 
-let ME = null;
-let allUsers = [];
-let rooms = [];
-let currentRoom = null;
-let realtimeSub = null;
-let selectedUsers = [];
+// ══════════════════════════════════════
+// 초기화
+// ══════════════════════════════════════
+let filteredData = [...DATA];
 
-// ── API 헬퍼 ──
-async function api(path, method='GET', body=null) {
-  const headers = { ...H };
-  if (method === 'POST') headers['Prefer'] = 'return=representation';
-  if (method === 'PATCH') headers['Prefer'] = 'return=representation';
-  if (method === 'DELETE') headers['Prefer'] = 'return=representation';
-  const opts = { method, headers };
-  if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, opts);
-  if (!r.ok) {
-    const e = await r.text();
-    console.error('API Error:', method, path, e);
-    throw new Error(e);
-  }
-  const t = await r.text();
-  return t ? JSON.parse(t) : null;
+function init() {
+  document.getElementById('total-count').textContent = DATA.length;
+  populateFilters();
+  renderCards(DATA);
+  renderTree();
+  // 조직도 탭이 숨겨져 있으므로 탭 전환 시 그려짐 (switchTab에서 처리)
 }
 
-// ── 부서 목록 동적 로드 ──
-async function loadDepartments() {
-  try {
-    const sel = document.getElementById('login-dept');
-    const users = await api('users?select=department&order=department');
-    const depts = [...new Set(users.map(u => u.department).filter(Boolean))].sort();
-    sel.innerHTML = '<option value="">부서 선택</option>';
-    depts.forEach(d => {
-      const o = document.createElement('option');
-      o.value = d; o.textContent = d;
-      sel.appendChild(o);
-    });
-    if (depts.length === 0) {
-      sel.innerHTML = '<option value="">등록된 부서 없음 - 직접 입력</option>';
-    }
-  } catch(e) {
-    const sel = document.getElementById('login-dept');
-    sel.innerHTML = '<option value="">부서 로드 실패 - 새로고침 해주세요</option>';
-  }
+function populateFilters() {
+  const honbuOrder = ['임원','안전감사팀','기획홍보실','경영사업본부','개발사업본부'];
+  const honbus = honbuOrder.filter(h => DATA.some(d => d.honbu === h));
+  const honbuSel = document.getElementById('filterHonbu');
+  honbus.forEach(h => { const o = document.createElement('option'); o.value = h; o.textContent = h; honbuSel.appendChild(o); });
+
+  const teams = [...new Set(DATA.map(d => d.team).filter(t => t && !['임원실','기획조정실','경영사업본부','개발사업본부','경영지원처','생활체육처','개발사업처','교통레저처','기획홍보실','안전감사팀'].includes(t)))];
+  const teamSel = document.getElementById('filterTeam');
+  teams.sort().forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; teamSel.appendChild(o); });
 }
 
-// ── 로그인 ──
-async function doLogin() {
-  const name = document.getElementById('login-name').value.trim();
-  const dept = document.getElementById('login-dept').value;
-  const err = document.getElementById('login-err');
-  if (!name) { showErr('이름을 입력해주세요.'); return; }
-  if (!dept) { showErr('부서를 선택해주세요.'); return; }
-  try {
-    let users = await api('users?name=eq.' + encodeURIComponent(name) + '&select=*');
-    if (users.length === 0) {
-      users = await api('users', 'POST', { name, department: dept });
-    } else {
-      await api('users?id=eq.' + users[0].id, 'PATCH', { last_seen: new Date().toISOString(), department: dept });
-    }
-    ME = Array.isArray(users) ? users[0] : users;
-    // 로그인 즉시 chat + last_seen 갱신
-    await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + ME.id, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ last_seen: new Date().toISOString(), status: 'chat' })
-    });
-    ME.status = 'chat';
-    ME.last_seen = new Date().toISOString();
-    localStorage.setItem('uw_me', JSON.stringify(ME));
-    startApp();
-  } catch(e) { showErr('접속 실패: ' + e.message); }
-}
-function showErr(msg) {
-  const el = document.getElementById('login-err');
-  el.textContent = msg; el.style.display = 'block';
-}
-async function doLogout() {
-  // 로그아웃 시 status를 offline으로 변경
-  if (ME && ME.id) {
-    try {
-      await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + ME.id, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_KEY,
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-          status: 'offline',
-          last_seen: new Date(Date.now() - 600000).toISOString() // 10분 전으로 설정
-        })
-      });
-    } catch(e) { console.error('로그아웃 상태 업데이트 실패:', e); }
-  }
-  ME = null; localStorage.removeItem('uw_me');
-  if (realtimeSub) realtimeSub.close();
-  [window._t1, window._t2, window._t3, window._t4, window._t5, window._t7].forEach(t => clearInterval(t));
-  currentRoom = null; rooms = []; allUsers = [];
-  lastSeenMsgIds = {}; unreadCounts = {}; appStartTime = null;
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
-  loadDepartments();
+function doSearch() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const honbu = document.getElementById('filterHonbu').value;
+  const team = document.getElementById('filterTeam').value;
+  const grade = document.getElementById('filterGrade').value;
+
+  filteredData = DATA.filter(d => {
+    const matchQ = !q || d.name.toLowerCase().includes(q) || d.honbu.toLowerCase().includes(q)
+      || d.team.toLowerCase().includes(q) || d.grade.toLowerCase().includes(q) || d.title.toLowerCase().includes(q);
+    const matchH = !honbu || d.honbu === honbu;
+    const matchT = !team || d.team === team;
+    const matchG = !grade || d.grade.includes(grade) || d.title.includes(grade);
+    return matchQ && matchH && matchT && matchG;
+  });
+
+  renderCards(filteredData);
+  document.getElementById('resultCount').textContent = `${filteredData.length}명`;
+  document.getElementById('emptyMsg').style.display = filteredData.length === 0 ? 'block' : 'none';
 }
 
-// ── 앱 시작 ──
-async function startApp() {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-  document.getElementById('me-avatar').textContent = ME.name.slice(0,2);
-  document.getElementById('me-name-disp').textContent = ME.name;
-  ME.status = ME.status || 'chat';
-  updateMyStatusDisplay();
-  appStartTime = Date.now();
-  await loadUsers();
-  await loadRooms();
-  subscribeRealtime();
-  await updateLastSeen();
-  autoDeleteOldMessages();
-  requestNotifPermission();
-  window._t1 = setInterval(updateLastSeen, 10000);
-  window._t2 = setInterval(loadUsers, 5000);
-  window._t5 = setInterval(updateChatHeaderStatus, 5000);
-  // updateReadBadges는 Realtime으로만 처리
-  window._t3 = setInterval(autoDeleteOldMessages, 60 * 60 * 1000);
-  window._t4 = setInterval(loadRooms, 2000);
-  window._t7 = setInterval(refreshUnreadCounts, 5000);
-  refreshUnreadCounts();
-  openChatFromQuery();
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('filterHonbu').value = '';
+  document.getElementById('filterTeam').value = '';
+  document.getElementById('filterGrade').value = '';
+  doSearch();
 }
 
-// ── URL의 ?chatWith=이름 으로 자동 채팅 시작 (조직도 연동) ──
-async function openChatFromQuery() {
-  const params = new URLSearchParams(window.location.search);
-  const name = params.get('chatWith');
+// ── 아바타 이니셜 & 색상 ──
+function getGradeClass(p) {
+  if (p.grade === '임원급' || p.title.includes('본부장') || p.title.includes('사장') || p.title.includes('처장') || p.title.includes('실장')) return 'grade-임원';
+  if (p.grade === '팀장급' || p.title.includes('팀장')) return 'grade-팀장';
+  if (p.grade === '공무직') return 'grade-공무직';
+  if (p.grade === '계약직') return 'grade-계약직';
+  return 'grade-일반';
+}
+
+function initials(name) { return name.slice(0, 2); }
+
+// ── 인명부 렌더링 ──
+function renderCards(list) {
+  const grid = document.getElementById('personGrid');
+  grid.innerHTML = list.map((p, i) => `
+    <div class="person-card" onclick="openModal(${DATA.indexOf(p)})">
+      <div class="avatar ${getGradeClass(p)}">${initials(p.name)}</div>
+      <div class="card-info">
+        <div class="card-name">${p.name}</div>
+        <div class="card-title">${p.title}</div>
+        <div class="card-dept">${p.honbu} · ${p.team}</div>
+        <div class="card-contact">
+          <span class="card-ext">☎ ${p.ext}</span>
+          ${p.phone !== '-' ? `<span>${p.phone}</span>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── 모달 ──
+function openModalByName(name, team) {
+  const idx = DATA.findIndex(d => d.name === name && d.team === team);
+  if (idx >= 0) openModal(idx);
+}
+
+function openModal(idx) {
+  const p = DATA[idx];
+  const cls = getGradeClass(p);
+  document.getElementById('m-avatar').className = `modal-avatar avatar ${cls}`;
+  document.getElementById('m-avatar').textContent = initials(p.name);
+  document.getElementById('m-name').textContent = p.name;
+  document.getElementById('m-title').textContent = p.title;
+  document.getElementById('m-dept').textContent = `${p.honbu} › ${p.cheo || p.honbu} › ${p.team}`;
+  document.getElementById('m-grade').textContent = p.grade;
+  document.getElementById('m-ext').textContent = p.ext;
+  document.getElementById('m-phone').textContent = p.phone;
+  document.getElementById('m-chat-btn').dataset.name = p.name;
+  document.getElementById('modal').classList.add('open');
+}
+function goChat() {
+  const name = document.getElementById('m-chat-btn').dataset.name;
   if (!name) return;
-  history.replaceState(null, '', window.location.pathname);
-  const target = allUsers.find(u => u.name === name);
-  if (!target) {
-    alert(name + '님은 아직 메신저에 접속한 적이 없어요. 먼저 로그인 후 다시 시도해주세요.');
-    return;
-  }
-  if (target.id === ME.id) return;
-  await startDirectChat(target.id, target.name);
-}
-
-let lastActivity = Date.now();
-document.addEventListener('mousemove', () => lastActivity = Date.now());
-document.addEventListener('keydown', () => lastActivity = Date.now());
-
-async function updateLastSeen() {
-  if (!ME || !ME.id) return;
-  try {
-    const now = new Date().toISOString();
-    const res = await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + ME.id, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ last_seen: now })
-    });
-    if (res.ok) {
-      ME.last_seen = now;
-    } else {
-      const err = await res.text();
-      console.error('last_seen 업데이트 실패:', res.status, err);
-    }
-  } catch(e) {
-    console.error('last_seen 네트워크 오류:', e);
-  }
-}
-
-// ── 사용자 목록 ──
-async function loadUsers() {
-  if (!ME) return;
-  allUsers = await api('users?select=id,name,department,last_seen,status,status_msg&order=name');
-  renderOnlineList();
-  // 채팅 헤더 상태도 즉시 갱신
-  updateChatHeaderStatus();
-}
-
-function renderOnlineList() {
-  const el = document.getElementById('online-list');
-  // 온라인 먼저, 오프라인 나중 정렬
-  const sorted = [...allUsers]
-    .filter(u => u.id !== ME.id)
-    .sort((a, b) => {
-      const sa = getEffectiveStatus(a);
-      const sb = getEffectiveStatus(b);
-      const order = ['online','chat','away','busy','dnd','offline'];
-      return order.indexOf(sa) - order.indexOf(sb);
-    });
-
-  el.innerHTML = sorted.map(u => {
-    const st = getStatusInfo(getEffectiveStatus(u));
-    const statusMsg = u.status_msg ? u.status_msg : st.label;
-    return `<div class="online-item" onclick="startDirectChat('${u.id}','${u.name}')">
-      <div style="position:relative;flex-shrink:0;">
-        <div class="pick-avatar" style="background:rgba(255,255,255,0.18);color:#fff;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;">${u.name.slice(0,2)}</div>
-        <span style="position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:${st.color};border:2px solid #1a3a5c;"></span>
-      </div>
-      <div style="flex:1;min-width:0;">
-        <div class="online-name">${u.name} <span style="font-size:11px;opacity:0.6;">${u.department||''}</span></div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${statusMsg}</div>
-      </div>
-    </div>`;
-  }).join('') || '<div style="text-align:center;padding:24px;font-size:13px;color:rgba(255,255,255,0.4);">접속 중인 직원이 없습니다</div>';
-}
-
-// ── 채팅방 목록 ──
-let lastSeenMsgIds = {};      // roomId → 마지막으로 본 메시지 id
-let appStartTime = null;      // 앱 시작 시각 (이후 메시지만 알림)
-
-async function loadRooms() {
-  if (!ME || !ME.id) return;
-  const members = await api('room_members?user_id=eq.' + ME.id + '&select=room_id');
-  if (!members.length) { renderRooms([]); return; }
-  const ids = members.map(m => m.room_id);
-  const roomData = await api('rooms?id=in.(' + ids.join(',') + ')&select=*&order=created_at.desc');
-  const lastMsgs = await Promise.all(roomData.map(r =>
-    api('messages?room_id=eq.' + r.id + '&select=*&order=created_at.desc&limit=1')
-  ));
-  rooms = await Promise.all(roomData.map(async (r, i) => {
-    const allMembers = await api('room_members?room_id=eq.' + r.id + '&select=user_id');
-    const otherIds = allMembers.map(m=>m.user_id).filter(id=>id!==ME.id);
-    let displayName = r.name || '';
-    if (r.type === 'direct') {
-      displayName = otherIds.length > 0
-        ? (allUsers.find(u=>u.id===otherIds[0]) || {name:'알 수 없음'}).name
-        : '알 수 없음';
-    } else {
-      displayName = r.name || '단체방';
-    }
-    const lastMsg = lastMsgs[i][0] || null;
-
-    // ── 새 메시지 감지 (알림용) ──
-    if (lastMsg && lastMsg.user_id !== ME.id) {
-      const prevId = lastSeenMsgIds[r.id];
-      const isNew = prevId === undefined
-        ? (new Date(lastMsg.created_at + 'Z').getTime() > appStartTime)
-        : (prevId !== lastMsg.id);
-
-      if (isNew) {
-        const isCurrentRoom = currentRoom && currentRoom.id === r.id;
-        if (!isCurrentRoom) {
-          playBeep();
-          const sender = allUsers.find(u => u.id === lastMsg.user_id);
-          showBrowserNotif(sender ? sender.name : '누군가', lastMsg.content, r.id);
-        }
-      }
-      lastSeenMsgIds[r.id] = lastMsg.id;
-    } else if (lastMsg) {
-      lastSeenMsgIds[r.id] = lastMsg.id;
-    }
-
-    return { ...r, displayName, lastMsg, otherIds };
-  }));
-  renderRooms(rooms);
-}
-
-// ── 안 읽은 메시지 수 DB에서 계산 ──
-async function refreshUnreadCounts() {
-  if (!ME) return;
-  try {
-    // 내가 속한 채팅방 목록
-    const members = await api('room_members?user_id=eq.' + ME.id + '&select=room_id');
-    if (!members.length) return;
-    const roomIds = members.map(m => m.room_id);
-
-    // 각 방에서 내가 안 읽은 메시지 수 계산
-    // (내가 보내지 않은 메시지 중 message_reads에 내 id가 없는 것)
-    const newCounts = {};
-    for (const roomId of roomIds) {
-      const isCurrentRoom = currentRoom && currentRoom.id === roomId;
-      if (isCurrentRoom) { newCounts[roomId] = 0; continue; }
-
-      // 내가 안 보낸 메시지 중 내가 읽지 않은 것
-      const msgs = await api('messages?room_id=eq.' + roomId + '&user_id=neq.' + ME.id + '&select=id');
-      if (!msgs.length) { newCounts[roomId] = 0; continue; }
-
-      const msgIds = msgs.map(m => m.id);
-      const reads = await api('message_reads?message_id=in.(' + msgIds.join(',') + ')&user_id=eq.' + ME.id + '&select=message_id');
-      const readIds = new Set(reads.map(r => r.message_id));
-      newCounts[roomId] = msgIds.filter(id => !readIds.has(id)).length;
-    }
-
-    // 변경된 경우만 업데이트
-    let changed = false;
-    for (const [rid, cnt] of Object.entries(newCounts)) {
-      if ((unreadCounts[rid] || 0) !== cnt) { changed = true; break; }
-    }
-    if (changed) {
-      unreadCounts = newCounts;
-      updateTitleBadge();
-      renderRooms(rooms);
-    }
-  } catch(e) {}
-}
-
-function renderRooms(list) {
-  const q = document.getElementById('room-search').value.toLowerCase();
-  const filtered = list.filter(r => (r.displayName || '').toLowerCase().includes(q));
-  const el = document.getElementById('room-list');
-  if (!filtered.length) { el.innerHTML = '<div style="text-align:center;padding:24px;font-size:13px;color:rgba(255,255,255,0.4);">채팅방이 없습니다</div>'; return; }
-  el.innerHTML = filtered.map(r => {
-    const isGroup = r.type === 'group';
-    const displayName = r.displayName || '(이름 없음)';
-    const init = displayName.slice(0,2);
-    const last = r.lastMsg ? (r.lastMsg.content ? truncate(r.lastMsg.content, 20) : `📎 ${r.lastMsg.file_name||'파일'}`) : '대화를 시작해보세요';
-    const time = r.lastMsg ? formatTime(r.lastMsg.created_at) : '';
-    const active = currentRoom && currentRoom.id === r.id ? 'active' : '';
-    const unread = unreadCounts[r.id] || 0;
-    return `<div class="room-item ${active}" onclick="openRoom('${r.id}')">
-      <div class="room-avatar ${isGroup?'group':''}">${isGroup?'👥':init}</div>
-      <div class="room-info">
-        <div class="room-name">${r.displayName || '(이름 없음)'}</div>
-        <div class="room-last">${last}</div>
-      </div>
-      <div class="room-meta">
-        <div class="room-time">${time}</div>
-        ${unread > 0 ? `<div class="unread-badge">${unread}</div>` : ''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function filterRooms() { renderRooms(rooms); }
-
-// ── 채팅방 열기 ──
-async function openRoom(roomId) {
-  currentRoom = rooms.find(r=>r.id===roomId);
-  if (!currentRoom) {
-    await loadRooms();
-    currentRoom = rooms.find(r=>r.id===roomId);
-    if (!currentRoom) return;
-  }
-  clearUnread(roomId);
-  unreadCounts[roomId] = 0;
-  updateTitleBadge();
-  renderRooms(rooms);
-  document.querySelectorAll('.room-item').forEach(el => el.classList.remove('active'));
-  document.getElementById('empty-chat').style.display = 'none';
-  const cm = document.getElementById('chat-main');
-  cm.style.display = 'flex';
-  cm.style.flexDirection = 'column';
-  cm.style.overflow = 'hidden';
-  cm.style.flex = '1';
-
-  const isGroup = currentRoom.type === 'group';
-  const av = document.getElementById('ch-avatar');
-  av.textContent = isGroup ? '👥' : currentRoom.displayName.slice(0,2);
-  av.className = 'chat-header-avatar' + (isGroup?' group':'');
-  document.getElementById('ch-name').textContent = currentRoom.displayName;
-
-  if (!isGroup && currentRoom.otherIds.length > 0) {
-    updateChatHeaderStatus();
-  } else {
-    document.getElementById('ch-sub').textContent = '단체 채팅방';
-  }
-  await loadMessages();
-}
-
-// ── 메시지 로드 ──
-async function updateReadBadges() {
-  if (!currentRoom) return;
-  try {
-    // DOM에서 현재 뱃지 있는 message_id 목록
-    const badges = document.querySelectorAll('[data-msg-id]');
-    if (!badges.length) return;
-    const myMsgIds = [...badges].map(b => b.getAttribute('data-msg-id'));
-
-    const reads = await api('message_reads?message_id=in.(' + myMsgIds.join(',') + ')&select=message_id,user_id');
-
-    let memberCount = 2;
-    if (currentRoom.type === 'group') {
-      const members = await api('room_members?room_id=eq.' + currentRoom.id + '&select=user_id');
-      memberCount = members.length;
-    }
-    const otherCount = memberCount - 1;
-
-    const readMap = {};
-    reads.forEach(r => {
-      if (!readMap[r.message_id]) readMap[r.message_id] = new Set();
-      readMap[r.message_id].add(r.user_id);
-    });
-
-    myMsgIds.forEach(msgId => {
-      const readUsers = readMap[msgId] || new Set();
-      const readCount = [...readUsers].filter(uid => uid !== ME.id).length;
-      const unreadCount = otherCount - readCount;
-      const badge = document.querySelector(`[data-msg-id="${msgId}"]`);
-      if (badge) {
-        if (unreadCount > 0) {
-          badge.textContent = unreadCount;
-          badge.style.display = 'block';
-        } else {
-          badge.style.display = 'none';
-        }
-      }
-    });
-  } catch(e) {}
-}
-
-async function updateChatHeaderStatus() {
-  if (!currentRoom || currentRoom.type === 'group') return;
-  if (!currentRoom.otherIds || !currentRoom.otherIds.length) return;
-  try {
-    const freshUsers = await api('users?id=eq.' + currentRoom.otherIds[0] + '&select=*');
-    const other = freshUsers && freshUsers[0] ? freshUsers[0] : allUsers.find(u=>u.id===currentRoom.otherIds[0]);
-    if (other) {
-      const idx = allUsers.findIndex(u=>u.id===other.id);
-      if (idx >= 0) allUsers[idx] = other;
-      const st = getStatusInfo(getEffectiveStatus(other));
-      const msg = other.status_msg ? ` · ${other.status_msg}` : '';
-      const sub = document.getElementById('ch-sub');
-      if (sub) sub.innerHTML =
-        `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${st.color};margin-right:4px;"></span>${st.label}${msg}`;
-    }
-  } catch(e) {}
-}
-
-let _msgLoadTimer = null;
-function loadMessages() {
-  // 디바운스: 100ms 안에 여러 번 호출되면 마지막 것만 실행
-  if (_msgLoadTimer) clearTimeout(_msgLoadTimer);
-  _msgLoadTimer = setTimeout(_doLoadMessages, 100);
-}
-
-async function _doLoadMessages() {
-  if (!currentRoom) return;
-  try {
-    const msgs = await api('messages?room_id=eq.' + currentRoom.id + '&select=*&order=created_at.asc&limit=100');
-    if (!msgs.length) { renderMessages([], [], 2); return; }
-
-    // 읽음 처리 (비동기)
-    markMessagesAsRead(msgs);
-
-    // 내가 보낸 메시지 reads 조회
-    const myMsgIds = msgs.filter(m => m.user_id === ME.id).map(m => m.id);
-    let reads = [];
-    if (myMsgIds.length > 0) {
-      reads = await api('message_reads?message_id=in.(' + myMsgIds.join(',') + ')&select=message_id,user_id');
-    }
-
-    // 멤버 수
-    let memberCount = 2;
-    if (currentRoom.type === 'group') {
-      const members = await api('room_members?room_id=eq.' + currentRoom.id + '&select=user_id');
-      memberCount = members.length;
-    }
-
-    renderMessages(msgs, reads, memberCount);
-  } catch(e) {
-    console.error('loadMessages 오류:', e);
-  }
-}
-
-async function markMessagesAsRead(msgs) {
-  if (!ME) return;
-  const toMark = msgs.filter(m => m.user_id !== ME.id);
-  if (!toMark.length) return;
-  try {
-    const body = toMark.map(m => ({ message_id: m.id, user_id: ME.id }));
-    await fetch(SUPABASE_URL + '/rest/v1/message_reads', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
-        'Prefer': 'return=minimal,resolution=ignore-duplicates'
-      },
-      body: JSON.stringify(body)
-    });
-  } catch(e) {}
-}
-
-function renderMessages(msgs, reads=[], memberCount=2) {
-  const wrap = document.getElementById('messages-wrap');
-  if (!msgs.length) { wrap.innerHTML = '<div style="text-align:center;padding:40px;color:#ccc;font-size:14px;">첫 메시지를 보내보세요!</div>'; return; }
-
-  console.log('[renderMessages] msgs:', msgs.length, 'reads:', reads.length, 'memberCount:', memberCount);
-
-  // reads를 message_id 기준으로 그룹화
-  const readMap = {};
-  reads.forEach(r => {
-    if (!readMap[r.message_id]) readMap[r.message_id] = new Set();
-    readMap[r.message_id].add(r.user_id);
-  });
-
-  let html = '';
-  let lastDate = '';
-  let lastUserId = '';
-  msgs.forEach((m, i) => {
-    const date = m.created_at.slice(0,10);
-    if (date !== lastDate) {
-      html += `<div class="msg-date-divider"><span>${formatDate(m.created_at)}</span></div>`;
-      lastDate = date; lastUserId = '';
-    }
-    const isMine = m.user_id === ME.id;
-    const sender = allUsers.find(u=>u.id===m.user_id);
-    const senderName = sender ? sender.name : '알 수 없음';
-    const showAvatar = !isMine && lastUserId !== m.user_id;
-    const showName = !isMine && showAvatar && currentRoom.type === 'group';
-    lastUserId = m.user_id;
-    const init = senderName.slice(0,2);
-    const time = formatTimeShort(m.created_at);
-
-    // 읽음 표시 계산 (내가 보낸 메시지만)
-    let readBadge = '';
-    if (isMine) {
-      const readUsers = readMap[m.id] || new Set();
-      // 나 제외 읽은 사람 수
-      const readCount = [...readUsers].filter(uid => uid !== ME.id).length;
-      // 전체 상대방 수 (멤버 - 나)
-      const otherCount = memberCount - 1;
-      // 안 읽은 수 (최소 0)
-      const unreadCount = Math.max(0, otherCount - readCount);
-      readBadge = `<div data-msg-id="${m.id}" style="font-size:11px;color:#f5a623;font-weight:600;text-align:right;margin-bottom:2px;display:${unreadCount > 0 ? 'block' : 'none'}">${unreadCount > 0 ? unreadCount : ''}</div>`;
-    }
-
-    const fileHtml = renderFileAttachment(m);
-    const textHtml = m.content ? `<div class="msg-bubble">${escHtml(m.content)}</div>` : '';
-
-    html += `<div class="msg-row ${isMine?'mine':''}">
-      <div class="msg-avatar ${showAvatar?'':'hidden'}">${showAvatar?init:''}</div>
-      <div class="msg-content">
-        ${showName?`<div class="msg-sender">${senderName}</div>`:''}
-        ${fileHtml}
-        ${textHtml}
-      </div>
-      <div style="display:flex;flex-direction:column;justify-content:flex-end;margin:0 4px 2px;">
-        ${readBadge}
-        <div class="msg-time">${time}</div>
-      </div>
-    </div>`;
-  });
-  wrap.innerHTML = html;
-  wrap.scrollTop = wrap.scrollHeight;
-}
-
-// ── 파일 첨부 ──
-const STORAGE_BUCKET = 'chat-files';
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-let selectedFile = null;
-
-function handleFileSelect(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > MAX_FILE_SIZE) {
-    alert('파일 용량은 10MB 이하만 가능합니다.');
-    e.target.value = '';
-    return;
-  }
-  selectedFile = file;
-  document.getElementById('file-preview-name').textContent = `📎 ${file.name} (${Math.round(file.size/1024)}KB)`;
-  document.getElementById('file-preview-bar').classList.add('show');
-}
-function clearSelectedFile() {
-  selectedFile = null;
-  document.getElementById('file-input').value = '';
-  document.getElementById('file-preview-bar').classList.remove('show');
-}
-
-async function uploadFile(file) {
-  const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-  const path = `${currentRoom.id}/${Date.now()}_${safeName}`;
-  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${path}`, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
-      'Content-Type': file.type || 'application/octet-stream'
-    },
-    body: file
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return {
-    file_url: `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`,
-    file_name: file.name,
-    file_type: file.type || 'application/octet-stream',
-    file_size: file.size
-  };
-}
-
-// ── 메시지 전송 ──
-async function sendMessage() {
-  const input = document.getElementById('chat-input');
-  const content = input.value.trim();
-  if ((!content && !selectedFile) || !currentRoom) return;
-  const fileToSend = selectedFile;
-  input.value = ''; autoResize(input);
-  clearSelectedFile();
-  try {
-    const body = { room_id: currentRoom.id, user_id: ME.id, content };
-    if (fileToSend) {
-      const uploaded = await uploadFile(fileToSend);
-      Object.assign(body, uploaded);
-    }
-    await api('messages', 'POST', body);
-    await loadMessages();
-    await loadRooms();
-  } catch(e) {
-    console.error(e);
-    // 409(채팅방 없음) 에러면 채팅방 목록 새로고침
-    if (e.message && e.message.includes('23503')) {
-      currentRoom = null;
-      document.getElementById('chat-main').style.display = 'none';
-      document.getElementById('empty-chat').style.display = 'flex';
-      await loadRooms();
-      alert('채팅방이 종료되었습니다. 새 채팅을 시작해주세요.');
-    } else {
-      alert('전송 실패: ' + e.message);
-    }
-  }
-}
-
-function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-}
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-}
-
-// ── 알림 시스템 ──
-let notifEnabled = localStorage.getItem('uw_notif') !== 'off';
-let unreadCounts = {};
-
-function updateNotifBtn() {
-  const btn = document.getElementById('notif-btn');
-  if (btn) btn.textContent = notifEnabled ? '🔔' : '🔕';
-}
-
-async function toggleNotification() {
-  if (!notifEnabled) {
-    const perm = await Notification.requestPermission();
-    if (perm === 'granted') {
-      notifEnabled = true;
-      localStorage.setItem('uw_notif', 'on');
-      alert('알림이 켜졌어요!');
-    } else {
-      alert('브라우저 알림 권한이 거부되어 있어요.\n주소창 왼쪽 자물쇠 아이콘 → 알림 → 허용으로 변경해주세요.');
-      return;
-    }
-  } else {
-    notifEnabled = false;
-    localStorage.setItem('uw_notif', 'off');
-  }
-  updateNotifBtn();
-}
-
-function requestNotifPermission() {
-  if (Notification.permission === 'granted') {
-    notifEnabled = localStorage.getItem('uw_notif') !== 'off';
-  } else if (Notification.permission === 'default') {
-    Notification.requestPermission().then(p => {
-      if (p === 'granted') {
-        notifEnabled = true;
-        localStorage.setItem('uw_notif', 'on');
-      } else {
-        notifEnabled = false;
-      }
-      updateNotifBtn();
-    });
-  } else {
-    // denied - 브라우저 알림 불가, 뱃지/소리만 작동
-    notifEnabled = false;
-  }
-  updateNotifBtn();
-}
-
-function playBeep() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.frequency.value = 880;
-    o.type = 'sine';
-    g.gain.setValueAtTime(0.3, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-    o.start(ctx.currentTime);
-    o.stop(ctx.currentTime + 0.3);
-  } catch(e) {}
-}
-
-function showBrowserNotif(senderName, content, roomId) {
-  if (Notification.permission !== 'granted') return;
-  if (!notifEnabled) return;
-  if (document.visibilityState === 'visible' && currentRoom && currentRoom.id === roomId) return;
-  const n = new Notification('💬 ' + senderName, {
-    body: content.length > 50 ? content.slice(0, 50) + '...' : content,
-    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%231a3a5c"/><text y=".9em" font-size="80" x="10">💬</text></svg>',
-    tag: roomId,
-    requireInteraction: false
-  });
-  n.onclick = () => { window.focus(); openRoom(roomId); n.close(); };
-  setTimeout(() => n.close(), 5000);
-}
-
-function addUnread(roomId) {
-  if (currentRoom && currentRoom.id === roomId) return;
-  unreadCounts[roomId] = (unreadCounts[roomId] || 0) + 1;
-  updateTitleBadge();
-  if (rooms.length > 0) renderRooms(rooms);
-}
-
-function clearUnread(roomId) {
-  delete unreadCounts[roomId];
-  updateTitleBadge();
-}
-
-function updateTitleBadge() {
-  const total = Object.values(unreadCounts).reduce((a,b)=>a+b, 0);
-  document.title = total > 0 ? '(' + total + ') 의왕도시공사 메신저' : '의왕도시공사 메신저';
-}
-
-// ── Realtime 구독 ──
-function subscribeRealtime() {
-  if (realtimeSub) realtimeSub.close();
-  const url = SUPABASE_URL.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_KEY + '&vsn=1.0.0';
-  const ws = new WebSocket(url);
-  realtimeSub = ws;
-  ws.onopen = () => {
-    ws.send(JSON.stringify({ topic: 'realtime:public:messages', event: 'phx_join', payload: {}, ref: '1' }));
-    ws.send(JSON.stringify({ topic: 'realtime:public:room_members', event: 'phx_join', payload: {}, ref: '2' }));
-    ws.send(JSON.stringify({ topic: 'realtime:public:message_reads', event: 'phx_join', payload: {}, ref: '3' }));
-  };
-  ws.onmessage = (e) => {
-    try {
-      const data = JSON.parse(e.data);
-      if (data.event !== 'INSERT' && data.event !== 'DELETE') return;
-      const record = data.payload?.record;
-      if (!record) return;
-
-      // room_members 변경 → 내가 초대받은 경우 즉시 채팅방 목록 갱신
-      if (data.topic === 'realtime:public:room_members') {
-        if (record.user_id === ME.id) loadRooms();
-        return;
-      }
-
-      // message_reads INSERT → 읽음 숫자만 즉시 업데이트
-      if (data.topic === 'realtime:public:message_reads') {
-        if (currentRoom) updateReadBadges();
-        return;
-      }
-
-      // messages INSERT
-      if (record.content === undefined) return;
-      if (record.user_id === ME.id) {
-        if (currentRoom && record.room_id === currentRoom.id) loadMessages();
-        return;
-      }
-      // 상대방 메시지 - unread는 loadRooms에서만 처리 (중복 방지)
-      playBeep();
-      showBrowserNotif(
-        (allUsers.find(u => u.id === record.user_id) || {name:'누군가'}).name,
-        record.content, record.room_id
-      );
-      if (currentRoom && record.room_id === currentRoom.id) loadMessages();
-      loadRooms();
-      refreshUnreadCounts();
-    } catch(err) {}
-  };
-  ws.onclose = () => { setTimeout(subscribeRealtime, 3000); };
-}
-
-// ── 새 채팅 모달 ──
-function openNewChat() {
-  selectedUsers = [];
-  document.getElementById('modal-search').value = '';
-  document.getElementById('group-name-input').value = '';
-  document.getElementById('group-name-input').style.borderColor = '#e0e4ef';
-  document.getElementById('group-name-wrap').style.display = 'none';
-  renderModalUsers(allUsers.filter(u=>u.id!==ME.id));
-  document.getElementById('modal-bg').classList.add('open');
+  window.open('chat.html?chatWith=' + encodeURIComponent(name), '_blank');
 }
 function closeModal(e) {
-  if (!e || e.target === document.getElementById('modal-bg'))
-    document.getElementById('modal-bg').classList.remove('open');
+  if (!e || e.target === document.getElementById('modal') || e.currentTarget.classList.contains('modal-close'))
+    document.getElementById('modal').classList.remove('open');
 }
-function renderModalUsers(list) {
-  document.getElementById('user-pick-list').innerHTML = list.map(u => {
-    const sel = selectedUsers.includes(u.id);
-    return `<div class="user-pick-item ${sel?'selected':''}" onclick="toggleUser('${u.id}')">
-      <div class="pick-avatar">${u.name.slice(0,2)}</div>
-      <div><div class="pick-name">${u.name}</div><div class="pick-dept">${u.department||''}</div></div>
-      <div class="check-mark">✓</div>
+
+// ── 탭 전환 ──
+function switchTab(t) {
+  document.getElementById('tab-list').style.display = t === 'list' ? 'block' : 'none';
+  document.getElementById('tab-tree').style.display = t === 'tree' ? 'block' : 'none';
+  document.querySelectorAll('.tab').forEach((el, i) => el.classList.toggle('active', (i === 0) === (t === 'list')));
+  if (t === 'tree') setTimeout(drawConnectors, 50);
+}
+
+// ── 조직도 트리 렌더링 ──
+function renderTree() {
+  const wrap = document.getElementById('orgWrap');
+
+  // ── 데이터 트리 구성 ──
+  // 사장: 임원 honbu 중 team==='임원실'
+  const ceo = DATA.find(d => d.team === '임원실');
+
+  // 직속: 안전감사팀, 기획홍보실
+  function makeDirectNode(honbuName) {
+    const people = DATA.filter(d => d.honbu === honbuName);
+    const head   = people.filter(d => d.team === honbuName);
+    const teams  = [...new Set(people.map(d => d.team).filter(t => t !== honbuName))];
+    if (teams.length === 0) {
+      // 산하 팀 없음 (안전감사팀) - 박스 이름만 표시, 팀원 목록은 유지
+      return { name: honbuName, level: 'direct', head: [], members: people };
+    }
+    // 산하 팀 있음 (기획홍보실)
+    return {
+      name: honbuName, level: 'direct', head,
+      children: teams.map(t => ({
+        name: t, level: 'team',
+        members: people.filter(d => d.team === t)
+      }))
+    };
+  }
+
+  // 본부 노드 생성
+  function makeHonbuNode(honbuName) {
+    const people = DATA.filter(d => d.honbu === honbuName);
+    const head   = people.filter(d => d.team === honbuName);
+    const cheoNames = [...new Set(people.map(d => d.cheo).filter(c => c !== honbuName))];
+    return {
+      name: honbuName, level: 'honbu', head,
+      children: cheoNames.map(c => {
+        const cPeople = people.filter(d => d.cheo === c);
+        const cheoHead = cPeople.filter(d => d.team === c);
+        const teamNames = [...new Set(cPeople.map(d => d.team).filter(t => t !== c && t !== honbuName))];
+        return {
+          name: c, level: 'cheo', head: cheoHead,
+          children: teamNames.map(t => ({
+            name: t, level: 'team',
+            members: cPeople.filter(d => d.team === t)
+          }))
+        };
+      })
+    };
+  }
+
+  const treeData = {
+    name: '의왕도시공사', level: 'ceo',
+    ext: ceo ? ceo.ext : '7300',
+    ceo: ceo,
+    // 사장 직속: 안전감사팀, 기획홍보실
+    directs: ['안전감사팀', '기획홍보실'].map(makeDirectNode),
+    // 본부
+    honbus: ['경영사업본부', '개발사업본부'].map(makeHonbuNode)
+  };
+
+  wrap.innerHTML = `<div class="org-chart-root">${buildTreeHTML(treeData)}</div>`;
+}
+
+// ── 노드 HTML 빌더 (재귀) ──
+function buildTreeHTML(node) {
+  const VH = 20; // 수직선 높이(px)
+
+  function headSpan(people) {
+    return people.map(p => {
+      const n = p.name.replace(/'/g,"&#39;");
+      const t = p.team.replace(/'/g,"&#39;");
+      return `<span onclick="event.stopPropagation();openModalByName('${n}','${t}')" style="cursor:pointer;text-decoration:underline dotted;">${p.name}</span>`;
+    }).join(', ');
+  }
+
+  function boxHtml(name, level, head, ext, clickFn) {
+    const hs = head && head.length ? `<div class="box-sub">${headSpan(head)}</div>` : '';
+    const es = ext ? `<div class="box-sub">${ext}</div>` : '';
+    return `<div class="org-box level-${level}" onclick="${clickFn}">${
+      `<div class="box-name">${name}</div>${hs}${es}`
+    }</div>`;
+  }
+
+  function memberListHtml(members) {
+    if (!members || !members.length) return '';
+    return `<div class="conn-v" style="height:${VH}px"></div>
+    <div class="member-list">${members.map(m =>
+      `<div class="team-member" onclick="openModal(${DATA.indexOf(m)})">${m.name} <span style="color:#aaa;font-size:10px">${m.grade}</span></div>`
+    ).join('')}</div>`;
+  }
+
+  // 자식 행 + 연결선 렌더
+  function childrenHtml(children, nextBuilderFn) {
+    if (!children || !children.length) return '';
+    const cols = children.map(c => nextBuilderFn(c));
+    if (cols.length === 1) {
+      // 자식 1개 → 단순 수직선
+      return `<div class="conn-v" style="height:${VH}px"></div>${cols[0]}`;
+    }
+    // 자식 여러 개 → 가로선 + 수직선 분기
+    // 각 자식을 child-col 으로 감싸고 수평 연결선은 SVG로 처리
+    const colsHtml = cols.map(c =>
+      `<div class="child-col" style="padding:0 10px">
+        <div class="conn-v" style="height:${VH}px"></div>
+        ${c}
+      </div>`
+    ).join('');
+    return `
+      <div class="conn-v" style="height:${VH}px"></div>
+      <div style="position:relative">
+        <div class="children-row" id="cr_${Math.random().toString(36).slice(2)}">${colsHtml}</div>
+      </div>`;
+  }
+
+  // ── 팀 노드 ──
+  function teamNode(node) {
+    const esc = node.name.replace(/'/g,"&#39;");
+    const box = boxHtml(node.name, 'team', null, null, `openDeptModal('${esc}','team')`);
+    return `<div style="display:flex;flex-direction:column;align-items:center">${box}${memberListHtml(node.members)}</div>`;
+  }
+
+  // ── 처 노드 ──
+  function cheoNode(node) {
+    const esc = node.name.replace(/'/g,"&#39;");
+    const box = boxHtml(node.name, 'cheo', node.head, null, `openDeptModal('${esc}','cheo')`);
+    const kids = childrenHtml(node.children, teamNode);
+    return `<div style="display:flex;flex-direction:column;align-items:center">${box}${kids}</div>`;
+  }
+
+  // ── 본부 노드 ──
+  function honbuNode(node) {
+    const esc = node.name.replace(/'/g,"&#39;");
+    const box = boxHtml(node.name, 'honbu', node.head, null, `openDeptModal('${esc}','honbu')`);
+    const kids = childrenHtml(node.children, cheoNode);
+    return `<div style="display:flex;flex-direction:column;align-items:center">${box}${kids}</div>`;
+  }
+
+  // ── 직속(안전감사팀/기획홍보실) 노드 ──
+  function directNode(node) {
+    const esc = node.name.replace(/'/g,"&#39;");
+    const box = boxHtml(node.name, 'direct', node.head, null, `openDeptModal('${esc}','honbu')`);
+    if (node.members) {
+      // 안전감사팀 등 팀 자체가 말단
+      return `<div style="display:flex;flex-direction:column;align-items:center">${box}${memberListHtml(node.members)}</div>`;
+    }
+    const kids = childrenHtml(node.children, teamNode);
+    return `<div style="display:flex;flex-direction:column;align-items:center">${box}${kids}</div>`;
+  }
+
+  // ── 최상위: 사장 ──
+  const ceoClick = node.ceo ? `openModal(${DATA.indexOf(node.ceo)})` : '';
+  const ceoBox = `<div class="org-box level-ceo" onclick="${ceoClick}" style="cursor:pointer">
+    <div class="box-name">의왕도시공사</div>
+    ${node.ext ? `<div class="box-sub">${node.ext}</div>` : ''}
+  </div>`;
+
+  // 사장 아래: 직속 + 본부를 한 행으로
+  const allChildren = [...node.directs, ...node.honbus];
+  const allCols = allChildren.map(c => {
+    const isHonbu = c.level === 'honbu';
+    const inner = isHonbu ? honbuNode(c) : directNode(c);
+    return `<div class="child-col" style="padding:0 10px">
+      <div class="conn-v" style="height:${VH}px"></div>
+      ${inner}
     </div>`;
-  }).join('');
-  document.getElementById('selected-count').textContent = selectedUsers.length;
-}
-function filterModalUsers() {
-  const q = document.getElementById('modal-search').value.toLowerCase();
-  const filtered = allUsers.filter(u=>u.id!==ME.id && u.name.includes(q));
-  renderModalUsers(filtered);
-}
-function toggleUser(id) {
-  const idx = selectedUsers.indexOf(id);
-  if (idx >= 0) selectedUsers.splice(idx, 1); else selectedUsers.push(id);
-  filterModalUsers();
-  document.getElementById('group-name-wrap').style.display = selectedUsers.length >= 2 ? 'block' : 'none';
-}
-
-async function startChat() {
-  if (!selectedUsers.length) return;
-  if (selectedUsers.length === 1) {
-    closeModal();
-    await startDirectChat(selectedUsers[0]);
-  } else {
-    const groupName = document.getElementById('group-name-input').value.trim();
-    if (!groupName) {
-      document.getElementById('group-name-input').focus();
-      document.getElementById('group-name-input').style.borderColor = '#e24b4a';
-      setTimeout(() => document.getElementById('group-name-input').style.borderColor = '#e0e4ef', 1500);
-      return;
-    }
-    closeModal();
-    await startGroupChat(selectedUsers, groupName);
-  }
-}
-
-async function startDirectChat(otherId, otherName) {
-  try {
-    const members = await api('room_members?user_id=eq.' + ME.id + '&select=room_id');
-    if (members && members.length) {
-      for (const m of members) {
-        const rm = await api('room_members?room_id=eq.' + m.room_id + '&select=user_id');
-        const ids = rm.map(x=>x.user_id);
-        if (ids.length === 2 && ids.includes(otherId) && ids.includes(ME.id)) {
-          await loadRooms();
-          await openRoom(m.room_id);
-          return;
-        }
-      }
-    }
-    const roomRes = await api('rooms', 'POST', { type: 'direct', name: null });
-    const r = Array.isArray(roomRes) ? roomRes[0] : roomRes;
-    if (!r || !r.id) throw new Error('채팅방 생성 실패');
-    await api('room_members', 'POST', { room_id: r.id, user_id: ME.id });
-    await api('room_members', 'POST', { room_id: r.id, user_id: otherId });
-    await loadRooms();
-    const newRoom = rooms.find(x=>x.id===r.id);
-    if (newRoom) {
-      await openRoom(r.id);
-    } else {
-      currentRoom = { id: r.id, type: 'direct', displayName: otherName||'', otherIds: [otherId] };
-      await openRoom(r.id);
-    }
-  } catch(e) {
-    alert('채팅 시작 오류: ' + e.message);
-    console.error(e);
-  }
-}
-
-async function startGroupChat(userIds, name) {
-  if (!name) return;
-  try {
-    const roomRes = await api('rooms', 'POST', { type: 'group', name });
-    const r = Array.isArray(roomRes) ? roomRes[0] : roomRes;
-    if (!r || !r.id) throw new Error('채팅방 생성 실패');
-    await api('room_members', 'POST', { room_id: r.id, user_id: ME.id });
-    for (const uid of userIds) {
-      await api('room_members', 'POST', { room_id: r.id, user_id: uid });
-    }
-    await loadRooms();
-    await openRoom(r.id);
-  } catch(e) {
-    alert('단체방 생성 오류: ' + e.message);
-    console.error(e);
-  }
-}
-
-function switchSTab(t) {
-  document.getElementById('stab-chats').classList.toggle('active', t==='chats');
-  document.getElementById('stab-online').classList.toggle('active', t==='online');
-  document.getElementById('room-list').style.display = t==='chats'?'block':'none';
-  document.getElementById('online-list').style.display = t==='online'?'block':'none';
-  document.getElementById('room-search').placeholder = t==='chats'?'검색...':'이름 검색...';
-  // 전체 탭 열 때 즉시 최신 데이터 로드
-  if (t === 'online') loadUsers();
-}
-
-// ── 유틸 ──
-function renderFileAttachment(m) {
-  if (!m.file_url) return '';
-  const isImage = (m.file_type || '').startsWith('image/');
-  if (isImage) {
-    return `<a href="${m.file_url}" target="_blank" style="display:block;margin-bottom:4px;"><img class="msg-file-img" src="${m.file_url}" alt="${escHtml(m.file_name||'')}" /></a>`;
-  }
-  const sizeKb = m.file_size ? Math.round(m.file_size/1024) + 'KB' : '';
-  return `<a class="msg-file-doc" href="${m.file_url}" target="_blank" download="${escHtml(m.file_name||'')}" style="margin-bottom:4px;">
-    <span>📄</span><span class="fname">${escHtml(m.file_name||'파일')}</span><span style="opacity:0.6;font-size:11px;">${sizeKb}</span>
-  </a>`;
-}
-function truncate(s, n) { return s.length > n ? s.slice(0,n)+'...' : s; }
-function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
-// 한국 시간(KST = UTC+9) 변환
-function toKST(iso) {
-  const d = new Date(iso);
-  return new Date(d.getTime() + 9 * 60 * 60 * 1000);
-}
-function formatTime(iso) {
-  const d = toKST(iso);
-  const now = toKST(new Date().toISOString());
-  if (d.toDateString() === now.toDateString())
-    return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
-  return (d.getMonth()+1) + '/' + d.getDate();
-}
-function formatTimeShort(iso) {
-  const d = toKST(iso);
-  const h = d.getHours();
-  const m = d.getMinutes().toString().padStart(2,'0');
-  const ampm = h < 12 ? '오전' : '오후';
-  const h12 = h % 12 || 12;
-  return `${ampm} ${h12}:${m}`;
-}
-function formatDate(iso) {
-  const d = toKST(iso);
-  const days = ['일','월','화','수','목','금','토'];
-  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
-}
-
-
-// ── 채팅방 나가기 (메시지 즉시 삭제) ──
-async function leaveRoom() {
-  if (!currentRoom) return;
-  const isDirect = currentRoom.type === 'direct';
-  const confirmMsg = isDirect
-    ? '채팅방을 나가면 대화 내용이 모두 삭제됩니다. 나가시겠어요?'
-    : '단체방에서 나가면 나만 퇴장됩니다. 나머지 멤버의 대화는 유지됩니다. 나가시겠어요?';
-  if (!confirm(confirmMsg)) return;
-  try {
-    const roomId = currentRoom.id;
-    if (isDirect) {
-      // 1:1 채팅 → message_reads 먼저 삭제 → 메시지 삭제 → 멤버 삭제 → 방 삭제
-      // (CASCADE 설정 안 된 경우를 위해 순서대로 삭제)
-      const msgIds = await api('messages?room_id=eq.' + roomId + '&select=id');
-      if (msgIds.length > 0) {
-        const ids = msgIds.map(m => m.id).join(',');
-        await api('message_reads?message_id=in.(' + ids + ')', 'DELETE');
-      }
-      await api('messages?room_id=eq.' + roomId, 'DELETE');
-      await api('room_members?room_id=eq.' + roomId, 'DELETE');
-      await api('rooms?id=eq.' + roomId, 'DELETE');
-    } else {
-      // 단체방 → 나만 멤버에서 제거
-      await api('room_members?room_id=eq.' + roomId + '&user_id=eq.' + ME.id, 'DELETE');
-      const remaining = await api('room_members?room_id=eq.' + roomId + '&select=user_id');
-      if (!remaining || remaining.length === 0) {
-        const msgIds = await api('messages?room_id=eq.' + roomId + '&select=id');
-        if (msgIds.length > 0) {
-          const ids = msgIds.map(m => m.id).join(',');
-          await api('message_reads?message_id=in.(' + ids + ')', 'DELETE');
-        }
-        await api('messages?room_id=eq.' + roomId, 'DELETE');
-        await api('rooms?id=eq.' + roomId, 'DELETE');
-      }
-    }
-    currentRoom = null;
-    delete lastSeenMsgIds[roomId];
-    delete unreadCounts[roomId];
-    document.getElementById('chat-main').style.display = 'none';
-    document.getElementById('empty-chat').style.display = 'flex';
-    await loadRooms();
-  } catch(e) {
-    alert('나가기 오류: ' + e.message);
-    console.error(e);
-  }
-}
-
-// ── 24시간 지난 메시지 자동 삭제 ──
-async function autoDeleteOldMessages() {
-  if (!ME) return;
-  try {
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    await api('messages?created_at=lt.' + cutoff, 'DELETE');
-  } catch(e) { console.error('자동삭제 오류:', e); }
-}
-
-// ── 상태 관련 ──
-const STATUS_OPTIONS = [
-  { value: 'chat',    label: '채팅가능', color: '#22c55e', emoji: '🟢' },
-  { value: 'busy',    label: '부재중',   color: '#ef4444', emoji: '🔴' },
-];
-const STATUS_ALL = [
-  { value: 'chat',    label: '채팅가능', color: '#22c55e', emoji: '🟢' },
-  { value: 'busy',    label: '부재중',   color: '#ef4444', emoji: '🔴' },
-  { value: 'offline', label: '오프라인', color: '#6b7280', emoji: '⬛' },
-];
-
-function getAutoStatus(lastSeen) {
-  const diff = (Date.now() - new Date(lastSeen).getTime()) / 1000;
-  if (diff < 60)  return 'online';
-  if (diff < 300) return 'away';
-  return 'offline';
-}
-
-function getEffectiveStatus(user) {
-  if (!user) return 'offline';
-
-  // 오프라인 → 무조건 오프라인 (로그아웃 시 설정)
-  if (user.status === 'offline') return 'offline';
-  // 부재중 → 무조건 부재중
-  if (user.status === 'busy') return 'busy';
-
-  // last_seen 없으면 오프라인
-  if (!user.last_seen) return 'offline';
-
-  // last_seen이 UTC임을 명시 (Z 없으면 붙여줌)
-  const lastSeenStr = user.last_seen.endsWith('Z') ? user.last_seen : user.last_seen + 'Z';
-  const diff = (Date.now() - new Date(lastSeenStr).getTime()) / 1000;
-
-  // 5분(300초) 이상 갱신 없으면 오프라인
-  if (diff > 300) return 'offline';
-
-  // 그 외 → 채팅가능 (status 값 무관)
-  return 'chat';
-}
-
-function getStatusInfo(statusValue) {
-  return STATUS_ALL.find(s => s.value === statusValue) || STATUS_ALL[0];
-}
-
-function statusDot(user, size=8) {
-  const s = getStatusInfo(getEffectiveStatus(user));
-  return `<span style="display:inline-block;width:${size}px;height:${size}px;border-radius:50%;background:${s.color};flex-shrink:0;"></span>`;
-}
-
-// 상태 변경 팝업
-function openStatusPicker() {
-  const cur = getEffectiveStatus(ME);
-  const opts = STATUS_OPTIONS.map(s => `
-    <div onclick="setMyStatus('${s.value}')" style="
-      display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;
-      border-radius:8px;background:${s.value===cur?'#e8eef8':'transparent'};
-      transition:background 0.1s;
-    " onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='${s.value===cur?'#e8eef8':'transparent'}'">
-      <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0;"></span>
-      <span style="font-size:14px;font-weight:${s.value===cur?'600':'400'}">${s.label}</span>
-    </div>`).join('');
-
-  const curMsg = ME.status_msg || '';
-  document.getElementById('status-modal-content').innerHTML = `
-    <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;">상태 설정</h3>
-    <div style="margin-bottom:12px;">${opts}</div>
-    <input type="text" id="status-msg-input" value="${curMsg}" maxlength="30"
-      placeholder="상태 메시지 입력 (예: 오늘 외근입니다)"
-      style="width:100%;padding:9px 12px;border:1.5px solid #e0e4ef;border-radius:8px;font-size:13px;font-family:inherit;outline:none;"
-    />
-    <div style="display:flex;gap:8px;margin-top:10px;">
-      <button onclick="closeStatusModal()" style="flex:1;padding:9px;border-radius:8px;border:none;background:#f5f5f5;font-family:inherit;cursor:pointer;">취소</button>
-      <button onclick="saveStatus()" style="flex:1;padding:9px;border-radius:8px;border:none;background:#1a3a5c;color:#fff;font-family:inherit;cursor:pointer;font-weight:500;">저장</button>
-    </div>`;
-  document.getElementById('status-modal-bg').style.display = 'flex';
-}
-
-function closeStatusModal() {
-  document.getElementById('status-modal-bg').style.display = 'none';
-}
-
-async function setMyStatus(value) {
-  ME.status = value;
-  // 선택 즉시 UI 반영
-  document.querySelectorAll('#status-modal-content > div:nth-child(2) > div').forEach((el, i) => {
-    el.style.background = STATUS_OPTIONS[i].value === value ? '#e8eef8' : 'transparent';
-    el.querySelector('span:last-child').style.fontWeight = STATUS_OPTIONS[i].value === value ? '600' : '400';
   });
-  updateMyStatusDisplay();
+
+  // 수평 연결선 구현: 가로 절대 배치 div
+  const rowId = 'toprow';
+  const rowHtml = `
+    <div class="conn-v" style="height:${VH}px"></div>
+    <div style="position:relative">
+      <div class="children-row" id="${rowId}">${allCols.join('')}</div>
+    </div>`;
+
+  return `<div style="display:flex;flex-direction:column;align-items:center">
+    ${ceoBox}${rowHtml}
+  </div>`;
 }
 
-async function saveStatus() {
-  const msg = document.getElementById('status-msg-input').value.trim();
-  // window._selectedStatus: 모달에서 선택한 값 우선 사용
-  const status = window._selectedStatus || ME.status || 'chat';
-  console.log('저장할 상태:', status, '/ 메시지:', msg);
-  try {
-    const res = await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + ME.id, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
-        'Prefer': 'return=representation'
-      },
-      body: JSON.stringify({ status: status, status_msg: msg, last_seen: new Date().toISOString() })
+// 수평 연결선을 렌더 후 DOM에 그리기
+function drawConnectors() {
+  document.querySelectorAll('.children-row').forEach(row => {
+    const cols = row.querySelectorAll(':scope > .child-col');
+    if (cols.length < 2) return;
+    const rowRect = row.getBoundingClientRect();
+    const firstConnV = cols[0].querySelector(':scope > .conn-v');
+    const lastConnV  = cols[cols.length-1].querySelector(':scope > .conn-v');
+    if (!firstConnV || !lastConnV) return;
+    const firstRect = firstConnV.getBoundingClientRect();
+    const lastRect  = lastConnV.getBoundingClientRect();
+    const y = firstRect.top - rowRect.top + firstRect.height / 2;
+    const x1 = firstRect.left - rowRect.left + firstRect.width / 2;
+    const x2 = lastRect.left  - rowRect.left + lastRect.width  / 2;
+    // 기존 선 제거
+    row.querySelectorAll(':scope > .h-connector').forEach(e => e.remove());
+    const line = document.createElement('div');
+    line.className = 'h-connector';
+    line.style.cssText = `position:absolute;top:${y}px;left:${x1}px;width:${x2-x1}px;height:2px;background:#b0c0de;pointer-events:none;`;
+    row.appendChild(line);
+  });
+}
+
+// ── 부서 모달 ──
+function openDeptModal(deptName, level) {
+  // level: 'honbu' | 'cheo' | 'team'
+  let members = [];
+  if (level === 'honbu') {
+    members = DATA.filter(d => d.honbu === deptName);
+  } else if (level === 'cheo') {
+    members = DATA.filter(d => d.cheo === deptName);
+  } else {
+    members = DATA.filter(d => d.team === deptName);
+  }
+
+  // 팀별로 그룹핑
+  const groups = {};
+  members.forEach(m => {
+    const key = (level === 'team') ? deptName : m.team;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(m);
+  });
+
+  document.getElementById('dm-title').textContent = deptName;
+  document.getElementById('dm-sub').textContent = `총 ${members.length}명`;
+
+  let bodyHtml = '';
+  Object.entries(groups).forEach(([teamName, ppl]) => {
+    const label = (level === 'honbu' || level === 'cheo') ? teamName : '';
+    if (label) {
+      bodyHtml += `<div class="dept-section">
+        <div class="dept-section-title">${label}<span class="cnt">${ppl.length}</span></div>
+        <div class="dept-member-grid">`;
+    } else {
+      bodyHtml += `<div class="dept-section"><div class="dept-member-grid">`;
+    }
+    ppl.forEach(p => {
+      const idx = DATA.indexOf(p);
+      bodyHtml += `<div class="dept-member-card" onclick="closeDeptModal();openModal(${idx})">
+        <div class="dept-member-name">${p.name}</div>
+        <div class="dept-member-info">${p.title}</div>
+        ${p.ext && p.ext !== '-' ? `<div class="dept-member-ext">☎ ${p.ext}</div>` : ''}
+      </div>`;
     });
-    const text = await res.text();
-    console.log('상태 저장:', res.status, text);
-    if (!res.ok) throw new Error(text);
-    // ME 즉시 업데이트
-    ME.status = status;
-    ME.status_msg = msg;
-    ME.last_seen = new Date().toISOString();
-    localStorage.setItem('uw_me', JSON.stringify(ME));
-  } catch(e) {
-    console.error('상태 저장 실패:', e);
-    alert('저장 실패: ' + e.message);
-    return;
-  }
-  updateMyStatusDisplay();
-  closeStatusModal();
-  await loadUsers();
-}
-
-function updateMyStatusDisplay() {
-  const s = getStatusInfo(getEffectiveStatus(ME));
-  const dot = document.getElementById('my-status-dot');
-  const label = document.getElementById('my-status-label');
-  if (dot) { dot.style.background = s.color; }
-  if (label) { label.textContent = ME.status_msg ? ME.status_msg : s.label; }
-}
-
-// ── 알림 테스트 ──
-async function testNotif() {
-  const lines = [];
-  lines.push('=== 알림 진단 ===');
-  lines.push('notifEnabled: ' + notifEnabled);
-  lines.push('Notification.permission: ' + Notification.permission);
-  lines.push('appStartTime: ' + (appStartTime ? new Date(appStartTime).toLocaleTimeString() : 'null'));
-  lines.push('unreadCounts: ' + JSON.stringify(unreadCounts));
-  lines.push('lastSeenMsgIds 개수: ' + Object.keys(lastSeenMsgIds).length);
-  lines.push('rooms 개수: ' + rooms.length);
-
-  // 뱃지 강제 테스트
-  if (rooms.length > 0) {
-    const testRoomId = rooms[0].id;
-    unreadCounts[testRoomId] = 99;
-    updateTitleBadge();
-    renderRooms(rooms);
-    lines.push('✅ 뱃지 강제 표시 시도 (채팅방 목록 확인)');
-    setTimeout(() => {
-      delete unreadCounts[testRoomId];
-      updateTitleBadge();
-      renderRooms(rooms);
-    }, 5000);
-  } else {
-    lines.push('❌ 채팅방 없음 - 뱃지 테스트 불가');
-  }
-
-  // 브라우저 알림 테스트
-  if (Notification.permission === 'granted') {
-    try {
-      new Notification('🔔 알림 테스트', { body: '알림이 정상 작동합니다!' });
-      lines.push('✅ 브라우저 알림 전송 성공');
-    } catch(e) {
-      lines.push('❌ 브라우저 알림 오류: ' + e.message);
-    }
-  } else if (Notification.permission === 'default') {
-    const p = await Notification.requestPermission();
-    lines.push('알림 권한 요청 결과: ' + p);
-  } else {
-    lines.push('❌ 알림 권한 차단됨 - 브라우저 설정에서 허용 필요');
-  }
-
-  // 소리 테스트
-  try { playBeep(); lines.push('✅ 소리 재생 시도'); } catch(e) { lines.push('❌ 소리 오류: ' + e.message); }
-
-  alert(lines.join('\n'));
-}
-
-// 자동 로그인
-const saved = localStorage.getItem('uw_me');
-if (saved) {
-  ME = JSON.parse(saved);
-  // 자동 로그인 시 항상 chat으로 (offline 상태 초기화)
-  ME.status = 'chat';
-  ME.last_seen = new Date().toISOString();
-  api('users?id=eq.' + ME.id, 'PATCH', {
-    last_seen: new Date().toISOString(),
-    status: 'chat'
+    bodyHtml += `</div></div>`;
   });
-  startApp();
-} else { loadDepartments(); }
+
+  document.getElementById('dm-body').innerHTML = bodyHtml;
+  document.getElementById('deptModal').classList.add('open');
+}
+
+function closeDeptModal(e) {
+  if (!e || e.target === document.getElementById('deptModal') || e.currentTarget.classList.contains('dept-modal-close'))
+    document.getElementById('deptModal').classList.remove('open');
+}
+
+function highlightNode(el, name) {
+  document.querySelectorAll('.org-box').forEach(b => b.classList.remove('highlight-tree'));
+  el.classList.add('highlight-tree');
+  document.getElementById('searchInput').value = name;
+  doSearch();
+  switchTab('list');
+}
+
+init();
 </script>
 </body>
 </html>
