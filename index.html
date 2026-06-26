@@ -28,7 +28,7 @@
   .result-count { font-size: 13px; color: #888; white-space: nowrap; }
 
   /* ───── 인명부 탭 ───── */
-  #tab-list { display: block; }
+  #tab-list { display: none; }
   .person-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; padding: 16px 24px; }
   .person-card {
     background: #fff; border: 1px solid #e4e8f0; border-radius: 10px;
@@ -84,7 +84,7 @@
   .dept-member-ext { font-size: 11px; color: #4a6abf; margin-top: 1px; }
 
   /* ───── 조직도 탭 ───── */
-  #tab-tree { display: none; padding: 20px 16px 32px; }
+  #tab-tree { display: block; padding: 20px 16px 32px; }
   .org-wrap { overflow-x: auto; overflow-y: visible; }
   .org-chart-root { display: flex; flex-direction: column; align-items: center; min-width: max-content; padding: 12px 24px 32px; }
   .org-box {
@@ -136,8 +136,8 @@
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('list')">👤 인명 검색</div>
-  <div class="tab" onclick="switchTab('tree')">🌳 조직도 보기</div>
+  <div class="tab" onclick="switchTab('list')">👤 인명 검색</div>
+  <div class="tab active" onclick="switchTab('tree')">🌳 조직도 보기</div>
 </div>
 
 <div class="search-bar">
@@ -474,7 +474,7 @@ function init() {
   populateFilters();
   renderCards(DATA);
   renderTree();
-  // 조직도 탭이 숨겨져 있으므로 탭 전환 시 그려짐 (switchTab에서 처리)
+  setTimeout(drawConnectors, 50);
 }
 
 function populateFilters() {
