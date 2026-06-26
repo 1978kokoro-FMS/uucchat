@@ -173,6 +173,26 @@ body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f
 .send-btn:hover { background: #25527d; }
 .send-btn svg { width: 18px; height: 18px; fill: #fff; }
 .send-btn:disabled { background: #ccc; cursor: default; }
+.attach-btn {
+  width: 40px; height: 40px; background: #f0f2f5; border: none; border-radius: 50%;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-size: 18px;
+}
+.attach-btn:hover { background: #e0e4ef; }
+.file-preview-bar {
+  display: none; align-items: center; gap: 8px; padding: 8px 16px;
+  background: #f5f7ff; border-top: 1px solid #eee; font-size: 12px; color: #555;
+}
+.file-preview-bar.show { display: flex; }
+.file-preview-bar .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-preview-bar .remove-file { cursor: pointer; color: #e24b4a; font-weight: 600; padding: 2px 6px; }
+.msg-file-img { max-width: 240px; max-height: 240px; border-radius: 10px; display: block; cursor: pointer; }
+.msg-file-doc {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+  background: #f0f2f5; border-radius: 10px; text-decoration: none; color: #111; font-size: 13px;
+}
+.msg-row.mine .msg-file-doc { background: rgba(255,255,255,0.15); color: #fff; }
+.msg-file-doc .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
 
 /* 빈 화면 */
 .empty-chat {
@@ -311,7 +331,13 @@ body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f
         <button onclick="leaveRoom()" style="background:none;border:1px solid #ffcccc;color:#e24b4a;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;">나가기 🚪</button>
       </div>
       <div class="messages-wrap" id="messages-wrap"></div>
+      <div class="file-preview-bar" id="file-preview-bar">
+        <span class="name" id="file-preview-name"></span>
+        <span class="remove-file" onclick="clearSelectedFile()">✕</span>
+      </div>
       <div class="chat-input-wrap">
+        <input type="file" id="file-input" style="display:none;" onchange="handleFileSelect(event)" />
+        <button class="attach-btn" onclick="document.getElementById('file-input').click()" title="파일 첨부">📎</button>
         <textarea class="chat-input" id="chat-input" placeholder="메시지 입력... (Enter: 전송, Shift+Enter: 줄바꿈)" rows="1"
           onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
         <button class="send-btn" onclick="sendMessage()" id="send-btn">
@@ -654,7 +680,7 @@ function renderRooms(list) {
     const isGroup = r.type === 'group';
     const displayName = r.displayName || '(이름 없음)';
     const init = displayName.slice(0,2);
-    const last = r.lastMsg ? truncate(r.lastMsg.content, 20) : '대화를 시작해보세요';
+    const last = r.lastMsg ? (r.lastMsg.content ? truncate(r.lastMsg.content, 20) : `📎 ${r.lastMsg.file_name||'파일'}`) : '대화를 시작해보세요';
     const time = r.lastMsg ? formatTime(r.lastMsg.created_at) : '';
     const active = currentRoom && currentRoom.id === r.id ? 'active' : '';
     const unread = unreadCounts[r.id] || 0;
@@ -866,11 +892,15 @@ function renderMessages(msgs, reads=[], memberCount=2) {
       readBadge = `<div data-msg-id="${m.id}" style="font-size:11px;color:#f5a623;font-weight:600;text-align:right;margin-bottom:2px;display:${unreadCount > 0 ? 'block' : 'none'}">${unreadCount > 0 ? unreadCount : ''}</div>`;
     }
 
+    const fileHtml = renderFileAttachment(m);
+    const textHtml = m.content ? `<div class="msg-bubble">${escHtml(m.content)}</div>` : '';
+
     html += `<div class="msg-row ${isMine?'mine':''}">
       <div class="msg-avatar ${showAvatar?'':'hidden'}">${showAvatar?init:''}</div>
       <div class="msg-content">
         ${showName?`<div class="msg-sender">${senderName}</div>`:''}
-        <div class="msg-bubble">${escHtml(m.content)}</div>
+        ${fileHtml}
+        ${textHtml}
       </div>
       <div style="display:flex;flex-direction:column;justify-content:flex-end;margin:0 4px 2px;">
         ${readBadge}
@@ -882,14 +912,65 @@ function renderMessages(msgs, reads=[], memberCount=2) {
   wrap.scrollTop = wrap.scrollHeight;
 }
 
+// ── 파일 첨부 ──
+const STORAGE_BUCKET = 'chat-files';
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+let selectedFile = null;
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > MAX_FILE_SIZE) {
+    alert('파일 용량은 10MB 이하만 가능합니다.');
+    e.target.value = '';
+    return;
+  }
+  selectedFile = file;
+  document.getElementById('file-preview-name').textContent = `📎 ${file.name} (${Math.round(file.size/1024)}KB)`;
+  document.getElementById('file-preview-bar').classList.add('show');
+}
+function clearSelectedFile() {
+  selectedFile = null;
+  document.getElementById('file-input').value = '';
+  document.getElementById('file-preview-bar').classList.remove('show');
+}
+
+async function uploadFile(file) {
+  const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+  const path = `${currentRoom.id}/${Date.now()}_${safeName}`;
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${path}`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': file.type || 'application/octet-stream'
+    },
+    body: file
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return {
+    file_url: `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`,
+    file_name: file.name,
+    file_type: file.type || 'application/octet-stream',
+    file_size: file.size
+  };
+}
+
 // ── 메시지 전송 ──
 async function sendMessage() {
   const input = document.getElementById('chat-input');
   const content = input.value.trim();
-  if (!content || !currentRoom) return;
+  if ((!content && !selectedFile) || !currentRoom) return;
+  const fileToSend = selectedFile;
   input.value = ''; autoResize(input);
+  clearSelectedFile();
   try {
-    await api('messages', 'POST', { room_id: currentRoom.id, user_id: ME.id, content });
+    const body = { room_id: currentRoom.id, user_id: ME.id, content };
+    if (fileToSend) {
+      const uploaded = await uploadFile(fileToSend);
+      Object.assign(body, uploaded);
+    }
+    await api('messages', 'POST', body);
     await loadMessages();
     await loadRooms();
   } catch(e) {
@@ -901,6 +982,8 @@ async function sendMessage() {
       document.getElementById('empty-chat').style.display = 'flex';
       await loadRooms();
       alert('채팅방이 종료되었습니다. 새 채팅을 시작해주세요.');
+    } else {
+      alert('전송 실패: ' + e.message);
     }
   }
 }
@@ -1173,6 +1256,17 @@ function switchSTab(t) {
 }
 
 // ── 유틸 ──
+function renderFileAttachment(m) {
+  if (!m.file_url) return '';
+  const isImage = (m.file_type || '').startsWith('image/');
+  if (isImage) {
+    return `<a href="${m.file_url}" target="_blank" style="display:block;margin-bottom:4px;"><img class="msg-file-img" src="${m.file_url}" alt="${escHtml(m.file_name||'')}" /></a>`;
+  }
+  const sizeKb = m.file_size ? Math.round(m.file_size/1024) + 'KB' : '';
+  return `<a class="msg-file-doc" href="${m.file_url}" target="_blank" download="${escHtml(m.file_name||'')}" style="margin-bottom:4px;">
+    <span>📄</span><span class="fname">${escHtml(m.file_name||'파일')}</span><span style="opacity:0.6;font-size:11px;">${sizeKb}</span>
+  </a>`;
+}
 function truncate(s, n) { return s.length > n ? s.slice(0,n)+'...' : s; }
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
 // 한국 시간(KST = UTC+9) 변환
