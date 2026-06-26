@@ -199,6 +199,50 @@
 </div>
 
 <script>
+// ── 메신저 채팅 상태 연동 (Supabase users 테이블) ──
+const SUPABASE_URL = 'https://qiwqcylerloqxdqupgbk.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpd3FjeWxlcmxvcXhkcXVwZ2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MTQxMzMsImV4cCI6MjA3NDk5MDEzM30.haR8oLJsgp_5r-EisNqxI8ASHrdh87hiAixfMt5TG6U';
+let chatStatusMap = {}; // name → { color, label }
+
+function getEffectiveChatStatus(user) {
+  if (!user) return null;
+  if (user.status === 'offline') return 'offline';
+  if (user.status === 'busy') return 'busy';
+  if (!user.last_seen) return 'offline';
+  const lastSeenStr = user.last_seen.endsWith('Z') ? user.last_seen : user.last_seen + 'Z';
+  const diff = (Date.now() - new Date(lastSeenStr).getTime()) / 1000;
+  if (diff > 300) return 'offline';
+  return 'chat';
+}
+const CHAT_STATUS_INFO = {
+  chat:    { color: '#22c55e', label: '채팅가능' },
+  busy:    { color: '#ef4444', label: '부재중' },
+  offline: { color: '#9ca3af', label: '오프라인' },
+};
+function statusDotHtml(name, size=9) {
+  const st = chatStatusMap[name];
+  if (!st) return '';
+  return `<span title="${st.label}" style="display:inline-block;width:${size}px;height:${size}px;border-radius:50%;background:${st.color};border:1.5px solid #fff;box-shadow:0 0 0 1px #ddd;flex-shrink:0;"></span>`;
+}
+async function loadChatStatus() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/users?select=name,status,last_seen', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    });
+    if (!res.ok) return;
+    const users = await res.json();
+    const map = {};
+    users.forEach(u => {
+      const eff = getEffectiveChatStatus(u);
+      map[u.name] = CHAT_STATUS_INFO[eff];
+    });
+    chatStatusMap = map;
+    renderCards(filteredData);
+    renderTree();
+    setTimeout(drawConnectors, 50);
+  } catch(e) { console.error('채팅 상태 로드 실패:', e); }
+}
+
 // ══════════════════════════════════════════════════
 //  📋 데이터 — 내일 이 부분만 교체하면 됩니다!
 //  형식: { name, grade, title, honbu, cheo, team, ext, phone }
@@ -475,6 +519,8 @@ function init() {
   renderCards(DATA);
   renderTree();
   setTimeout(drawConnectors, 50);
+  loadChatStatus();
+  setInterval(loadChatStatus, 15000);
 }
 
 function populateFilters() {
@@ -532,7 +578,10 @@ function renderCards(list) {
   const grid = document.getElementById('personGrid');
   grid.innerHTML = list.map((p, i) => `
     <div class="person-card" onclick="openModal(${DATA.indexOf(p)})">
-      <div class="avatar ${getGradeClass(p)}">${initials(p.name)}</div>
+      <div style="position:relative;flex-shrink:0;">
+        <div class="avatar ${getGradeClass(p)}">${initials(p.name)}</div>
+        <span style="position:absolute;bottom:-2px;right:-2px;">${statusDotHtml(p.name)}</span>
+      </div>
       <div class="card-info">
         <div class="card-name">${p.name}</div>
         <div class="card-title">${p.title}</div>
@@ -557,7 +606,7 @@ function openModal(idx) {
   const cls = getGradeClass(p);
   document.getElementById('m-avatar').className = `modal-avatar avatar ${cls}`;
   document.getElementById('m-avatar').textContent = initials(p.name);
-  document.getElementById('m-name').textContent = p.name;
+  document.getElementById('m-name').innerHTML = `${p.name} ${statusDotHtml(p.name,10)}`;
   document.getElementById('m-title').textContent = p.title;
   document.getElementById('m-dept').textContent = `${p.honbu} › ${p.cheo || p.honbu} › ${p.team}`;
   document.getElementById('m-grade').textContent = p.grade;
@@ -654,7 +703,7 @@ function buildTreeHTML(node) {
     return people.map(p => {
       const n = p.name.replace(/'/g,"&#39;");
       const t = p.team.replace(/'/g,"&#39;");
-      return `<span onclick="event.stopPropagation();openModalByName('${n}','${t}')" style="cursor:pointer;text-decoration:underline dotted;">${p.name}</span>`;
+      return `<span onclick="event.stopPropagation();openModalByName('${n}','${t}')" style="cursor:pointer;text-decoration:underline dotted;">${statusDotHtml(p.name,7)} ${p.name}</span>`;
     }).join(', ');
   }
 
@@ -670,7 +719,7 @@ function buildTreeHTML(node) {
     if (!members || !members.length) return '';
     return `<div class="conn-v" style="height:${VH}px"></div>
     <div class="member-list">${members.map(m =>
-      `<div class="team-member" onclick="openModal(${DATA.indexOf(m)})">${m.name} <span style="color:#aaa;font-size:10px">${m.grade}</span></div>`
+      `<div class="team-member" onclick="openModal(${DATA.indexOf(m)})">${statusDotHtml(m.name,7)} ${m.name} <span style="color:#aaa;font-size:10px">${m.grade}</span></div>`
     ).join('')}</div>`;
   }
 
